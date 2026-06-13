@@ -155,6 +155,23 @@ table.dt td:first-child { font-family: var(--sans); font-size: 11px; font-weight
 .empty-title { font-size: 15px; font-weight: 700; color: var(--dark); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; font-family: var(--sans); }
 .empty-sub { font-size: 13px; line-height: 1.8; color: var(--mid); }
 
+/* ── Fix box ── */
+.fixbox { width: 100%; max-width: 780px; margin-top: 22px; background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; display: none; }
+.fixbox.visible { display: block; }
+.fixbox-head { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--soft); margin-bottom: 6px; }
+.fixbox-hint { font-size: 12px; color: var(--mid); line-height: 1.55; margin-bottom: 10px; }
+.fixbox textarea { width: 100%; min-height: 60px; padding: 9px 11px; border: 1px solid var(--border); border-radius: var(--r); font-family: var(--sans); font-size: 13px; color: var(--dark); background: var(--white); resize: vertical; outline: none; transition: border-color .12s; }
+.fixbox textarea:focus { border-color: var(--red); box-shadow: 0 0 0 3px var(--red-dim); }
+.fixbox-row { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.btn-fix { display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; background: var(--dark); color: #fff; border: none; border-radius: var(--r); font-family: var(--sans); font-size: 13px; font-weight: 600; cursor: pointer; transition: background .12s; }
+.btn-fix:hover:not(:disabled) { background: #333; }
+.btn-fix:disabled { background: #ccc; cursor: default; }
+.btn-fix.loading .spinner { display: block; }
+.fix-status { font-size: 12px; line-height: 1.4; }
+.fix-status.thinking { color: var(--blue); }
+.fix-status.done { color: var(--green); }
+.fix-status.error { color: #a00; }
+
 /* ── Modal ── */
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 999; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
@@ -175,7 +192,7 @@ table.dt td:first-child { font-family: var(--sans); font-size: 11px; font-weight
 
 /* ── Print ── */
 @media print {
-  .sidebar, .preview-bar { display: none !important; }
+  .sidebar, .preview-bar, .fixbox { display: none !important; }
   .app { display: block; }
   .main { padding: 0; }
   .doc { box-shadow: none; border: none; padding: 18mm 20mm; max-width: 100%; }

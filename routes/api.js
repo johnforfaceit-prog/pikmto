@@ -11,7 +11,10 @@ router.post('/claude', async (req, res) => {
     const apiKey = req.body.apiKey || process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return res.status(400).json({ error: 'API ключ не указан' });
 
-    const { messages, model, max_tokens } = req.body;
+    const { messages, model, max_tokens, system } = req.body;
+
+    const payload = { model: model || 'claude-sonnet-4-6', max_tokens: max_tokens || 1000, messages };
+    if (system) payload.system = system;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -20,7 +23,7 @@ router.post('/claude', async (req, res) => {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01'
       },
-      body: JSON.stringify({ model: model || 'claude-sonnet-4-6', max_tokens: max_tokens || 1000, messages })
+      body: JSON.stringify(payload)
     });
 
     const data = await response.json();
