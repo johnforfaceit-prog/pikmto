@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ПИК — Заключение по счёту</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app">
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="sidebar-head">
+    <div class="brand">
+      <div class="brand-left">
+        <div class="brand-icon">П</div>
+        <div>
+          <div class="brand-name">ПИК — Заключение по счёту</div>
+          <div class="brand-sub">Автоматизированная система документооборота</div>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="logout()">Выйти</button>
+    </div>
+  </div>
+
+  <!-- API Key -->
+  <div class="api-banner">
+    <div class="api-banner-title">🔑 API-ключ Claude (один раз)</div>
+    <div class="api-key-row">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-..." autocomplete="off">
+      <button onclick="saveApiKey()">Сохранить</button>
+    </div>
+    <div class="api-saved" id="apiSaved">✓ Ключ сохранён</div>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps-wrap">
+    <div class="step">
+      <div class="step-dot active" id="dot1">1</div>
+      <div class="step-info">
+        <div class="step-title">Прошлое заключение</div>
+        <div class="step-sub">.docx из папки подрядчика</div>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step">
+      <div class="step-dot" id="dot2">2</div>
+      <div class="step-info">
+        <div class="step-title">Фото или скан счёта</div>
+        <div class="step-sub">JPG, PNG, PDF</div>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+    <div class="step">
+      <div class="step-dot" id="dot3">3</div>
+      <div class="step-info">
+        <div class="step-title">AI заполняет, ты проверяешь</div>
+        <div class="step-sub">Скачай → печатай → подписи</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drop zones -->
+  <div class="drops">
+    <div class="drop" id="dropDocx"
+      onclick="document.getElementById('inDocx').click()"
+      ondragover="dz(event,'dropDocx',true)" ondragleave="dz(event,'dropDocx',false)" ondrop="dropFile(event,'inDocx',loadDocx)">
+      <div class="drop-icon" id="docxIcon">📄</div>
+      <div class="drop-title" id="docxTitle">Заключение прошлого месяца</div>
+      <div class="drop-sub" id="docxSub">Перетащите .docx или нажмите</div>
+      <div class="drop-loaded-name" id="docxName" style="display:none"></div>
+    </div>
+    <div class="drop-footer" id="docxFooter">
+      <button class="btn-preview" onclick="previewDocx(event)">👁 Просмотр</button>
+      <button class="btn-trash"   onclick="clearDocx(event)" title="Удалить">🗑</button>
+    </div>
+    <input type="file" id="inDocx" accept=".docx" style="display:none" onchange="loadDocx(this.files[0])">
+
+    <div class="drop" id="dropImg"
+      onclick="document.getElementById('inImg').click()"
+      ondragover="dz(event,'dropImg',true)" ondragleave="dz(event,'dropImg',false)" ondrop="dropFile(event,'inImg',loadImage)">
+      <div class="drop-icon" id="imgIcon">📸</div>
+      <div class="drop-title" id="imgTitle">Фото или скан счёта</div>
+      <div class="drop-sub" id="imgSub">JPG / PNG / PDF</div>
+      <div class="drop-loaded-name" id="imgName" style="display:none"></div>
+      <img id="invoiceThumb" class="invoice-thumb" alt="счёт">
+    </div>
+    <div class="drop-footer" id="imgFooter">
+      <button class="btn-preview" onclick="previewImg(event)">👁 Просмотр</button>
+      <button class="btn-trash"   onclick="clearImg(event)" title="Удалить">🗑</button>
+    </div>
+    <input type="file" id="inImg" accept="image/*,.pdf" style="display:none" onchange="loadImage(this.files[0])">
+  </div>
+
+  <!-- AI кнопка -->
+  <div class="ai-btn-wrap">
+    <button class="btn-ai" id="btnAI" onclick="runAI()" disabled>
+      <div class="spinner"></div>
+      <span id="btnAILabel">✦ Распознать счёт и заполнить</span>
+    </button>
+  </div>
+  <div class="ai-status" id="aiStatus"></div>
+
+  <div class="divider"></div>
+
+  <!-- Поля -->
+  <div class="fields" id="fieldsArea">
+    <div style="text-align:center;padding:16px 0;color:#888;font-size:12px;line-height:1.6;">
+      Загрузите файлы и нажмите<br>«Распознать счёт и заполнить»
+    </div>
+  </div>
+
+  <div class="sidebar-foot">
+    <button class="btn-main" id="btnDown" onclick="downloadDocx()" disabled>↓ Скачать .docx</button>
+    <button class="btn-print-sm" onclick="window.print()">Печать / PDF</button>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<main class="main">
+  <div class="preview-bar">
+    <span class="preview-label">Предпросмотр документа</span>
+    <button class="btn-print" onclick="window.print()">Печать</button>
+  </div>
+  <div id="docWrap">
+    <div class="empty">
+      <div class="empty-emblem">⚜</div>
+      <div class="empty-title">Система автоматизации документооборота</div>
+      <div class="empty-sub">
+        Загрузите прошлое заключение и счёт для автоматического заполнения.<br>
+        Нажмите «Распознать счёт и заполнить» для формирования документа.
+      </div>
+    </div>
+  </div>
+</main>
+
+</div>
+
+<!-- Модальное окно -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span class="modal-head-title" id="modalTitle">Просмотр</span>
+      <button class="modal-close" onclick="closeModalBtn()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

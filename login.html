@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ПИК — Вход</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">П</div>
+      <div>
+        <div class="login-logo-name">ПИК</div>
+        <div class="login-logo-sub">Система заключений по счетам</div>
+      </div>
+    </div>
+    <div class="login-title">Добро пожаловать</div>
+    <div class="login-sub">Введите логин и пароль для входа</div>
+
+    <div class="login-field">
+      <label>Логин</label>
+      <input type="text" id="loginInput" placeholder="admin" autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="login-field">
+      <label>Пароль</label>
+      <input type="password" id="passInput" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Войти</button>
+    <div class="login-error" id="loginError">Неверный логин или пароль</div>
+  </div>
+</div>
+
+<script>
+async function doLogin() {
+  const login    = document.getElementById('loginInput').value.trim();
+  const password = document.getElementById('passInput').value;
+  const errEl    = document.getElementById('loginError');
+  errEl.classList.remove('show');
+
+  if (!login || !password) { errEl.textContent = 'Заполните все поля'; errEl.classList.add('show'); return; }
+
+  try {
+    const resp = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login, password })
+    });
+    const data = await resp.json();
+    if (resp.ok && data.ok) {
+      window.location.href = '/';
+    } else {
+      errEl.textContent = data.error || 'Неверный логин или пароль';
+      errEl.classList.add('show');
+      document.getElementById('passInput').value = '';
+    }
+  } catch(e) {
+    errEl.textContent = 'Ошибка соединения с сервером';
+    errEl.classList.add('show');
+  }
+}
+
+// Фокус на поле логина
+window.onload = () => document.getElementById('loginInput').focus();
+</script>
+</body>
+</html>
