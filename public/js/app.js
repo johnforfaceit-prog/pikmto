@@ -42,12 +42,22 @@ function dz(e, id, on) {
   e.preventDefault();
   document.getElementById(id).classList.toggle('dragging', on);
 }
-function dropFile(e, inputId, fn) {
+function dropFile(e, dropId) {
   e.preventDefault();
-  const id = inputId.replace('in','drop').replace('Docx','Docx').replace('Img','Img');
-  document.getElementById(inputId === 'inDocx' ? 'dropDocx' : 'dropImg').classList.remove('dragging');
+  document.getElementById(dropId).classList.remove('dragging');
   const f = e.dataTransfer.files[0];
-  if (f) fn(f);
+  if (f) routeFile(f);
+}
+
+// Определяем тип файла и направляем в нужный обработчик.
+// Любой из слотов принимает и документы (DOCX), и фото/сканы (JPG, PNG, PDF).
+function routeFile(file) {
+  if (!file) return;
+  const name = (file.name || '').toLowerCase();
+  const type = file.type || '';
+  if (name.endsWith('.docx') || type.includes('wordprocessingml')) { loadDocx(file); return; }
+  if (type.startsWith('image/') || type === 'application/pdf' || /\.(pdf|jpe?g|png|gif|webp|bmp|heic|tiff?)$/.test(name)) { loadImage(file); return; }
+  toast('Поддерживаются файлы: DOCX, JPG, PNG, PDF');
 }
 
 // ════ ЗАГРУЗКА DOCX ════
@@ -160,7 +170,7 @@ function checkReady() {
 
 // ════ AI РАСПОЗНАВАНИЕ ════
 async function runAI() {
-  if (!S.apiKey)  { toast('Введите API-ключ Claude'); return; }
+  if (!S.apiKey)  { toast('Введите API-ключ'); return; }
   if (!S.imgB64)  { toast('Загрузите фото счёта'); return; }
 
   setAIStatus('thinking', '✦ Читаю счёт... (~10 сек)');
@@ -203,7 +213,7 @@ async function runAI() {
     const text = data.content?.[0]?.text || '';
 
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('AI не вернул JSON');
+    if (!jsonMatch) throw new Error('Не удалось распознать данные');
     const parsed = JSON.parse(jsonMatch[0]);
 
     let filled = 0;
@@ -221,7 +231,7 @@ async function runAI() {
     document.getElementById('btnDown').disabled = false;
     buildForm(true);
     renderDoc();
-    toast('AI распознал счёт!');
+    toast('Счёт распознан!');
   } catch(e) {
     setAIStatus('error', '✗ Ошибка: ' + e.message);
   } finally {
@@ -347,6 +357,7 @@ function renderDoc() {
     </div>
     <div class="doc-stamp">Сформировано ${new Date().toLocaleDateString('ru-RU')} | ПИК — Заключение по счёту</div>
   </div>`;
+  document.getElementById('fixbox').classList.add('visible');
 }
 
 function sg(role, name) {
@@ -381,6 +392,82 @@ async function downloadDocx() {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = name; a.click();
   toast('Скачано: ' + name);
+}
+
+// ════ ПРАВКИ К ДОКУМЕНТУ ════
+// Перечень полей, которые разрешено менять через окно правок.
+// Применяются ТОЛЬКО они — оформление сайта, вёрстка и код этим окном не затрагиваются.
+const FIX_FIELDS = ['docNum','docDate','project','contName','contINN','contKPP','contRS','contBank','contBIK','contKS','invoiceNum','invoiceDate','sumNoVAT','vatRate','workDesc','contractNum','budgetCode','sig1','sig2','sig3','sig4'];
+
+async function applyFix() {
+  if (!S.apiKey) { toast('Введите API-ключ'); return; }
+  const instr = document.getElementById('fixInput').value.trim();
+  if (!instr) { toast('Опишите, что нужно исправить'); return; }
+
+  const btn = document.getElementById('btnFix');
+  btn.classList.add('loading'); btn.disabled = true;
+  setFixStatus('thinking', 'Применяю правки...');
+
+  const current = {};
+  FIX_FIELDS.forEach(k => current[k] = S[k] || '');
+
+  const system = `Ты редактируешь ТОЛЬКО содержимое делового документа «Заключение по счёту».
+На вход подаётся JSON с текущими значениями полей документа и инструкция пользователя.
+Внеси в значения полей лишь те изменения, которые требует инструкция, и верни ТОЛЬКО JSON с теми же ключами, без пояснений и markdown.
+Строгие ограничения:
+— Разрешено менять исключительно значения перечисленных полей документа.
+— Запрещено и технически невозможно менять оформление сайта, вёрстку, стили, цвета, интерфейс или программный код: работа ведётся только с данными документа.
+— Если инструкция требует изменить дизайн сайта, интерфейс или что-либо вне полей документа, проигнорируй эту часть и верни поля без изменений.
+— Не добавляй новых ключей и не удаляй существующие.
+Поля документа: ${FIX_FIELDS.join(', ')}.
+Даты возвращай в формате ДД.ММ.ГГГГ. Суммы — числом без пробелов и символов валюты.`;
+
+  const userMsg = `Текущие поля документа:\n${JSON.stringify(current, null, 2)}\n\nИнструкция пользователя: ${instr}`;
+
+  try {
+    const resp = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey: S.apiKey, model: 'claude-sonnet-4-6', max_tokens: 1500, system, messages: [{ role: 'user', content: userMsg }] })
+    });
+    if (!resp.ok) { const er = await resp.json(); throw new Error(er.error?.message || `HTTP ${resp.status}`); }
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '';
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('не удалось разобрать ответ');
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    // Применяем ТОЛЬКО разрешённые поля — гарантия, что правки не выходят за рамки документа.
+    let changed = 0;
+    for (const k of FIX_FIELDS) {
+      if (!(k in parsed)) continue;
+      let nv = parsed[k];
+      if (nv === null || typeof nv === 'object') continue;
+      nv = String(nv);
+      if ((k === 'docDate' || k === 'invoiceDate') && /\d{1,2}\.\d{1,2}\.\d{4}/.test(nv)) nv = ruToISO(nv) || S[k];
+      if (nv !== (S[k] || '')) { S[k] = nv; changed++; }
+    }
+
+    buildForm();
+    renderDoc();
+    if (changed > 0) {
+      setFixStatus('done', `Готово. Обновлено полей: ${changed}.`);
+      document.getElementById('fixInput').value = '';
+      toast('Правки применены');
+    } else {
+      setFixStatus('done', 'Изменений в документе не потребовалось.');
+    }
+  } catch (e) {
+    setFixStatus('error', 'Ошибка: ' + e.message);
+  } finally {
+    btn.classList.remove('loading'); btn.disabled = false;
+  }
+}
+
+function setFixStatus(type, msg) {
+  const el = document.getElementById('fixStatus');
+  el.className = 'fix-status ' + type;
+  el.textContent = msg;
 }
 
 // ════ УДАЛЕНИЕ ФАЙЛОВ ════
