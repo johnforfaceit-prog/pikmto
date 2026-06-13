@@ -127,27 +127,27 @@ textarea { min-height: 54px; resize: vertical; line-height: 1.5; }
 .preview-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--soft); }
 .btn-print { padding: 8px 16px; background: var(--dark); color: white; border: none; border-radius: var(--r); font-size: 12px; font-weight: 500; cursor: pointer; font-family: var(--sans); }
 
-/* ── Document ── */
-.doc { width: 100%; max-width: 780px; background: white; border: 1px solid #ddd; border-radius: 3px; box-shadow: 0 4px 28px rgba(0,0,0,.09); padding: 52px 68px; font-family: 'Times New Roman', serif; font-size: 14px; line-height: 1.65; color: #000; }
+/* ── Document — единый шрифт Times New Roman 12pt по всему документу ── */
+.doc { width: 100%; max-width: 780px; background: white; border: 1px solid #ddd; border-radius: 3px; box-shadow: 0 4px 28px rgba(0,0,0,.09); padding: 52px 68px; font-family: 'Times New Roman', Times, serif; font-size: 12pt; line-height: 1.5; color: #000; }
 .doc-top { text-align: center; margin-bottom: 26px; }
-.doc-org { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: #555; font-family: var(--sans); margin-bottom: 6px; }
-.doc-title { font-size: 17px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-.doc-subtitle { font-size: 13px; color: #333; margin-top: 4px; }
-.doc-meta { display: flex; justify-content: space-between; font-size: 12px; color: #555; padding-bottom: 12px; border-bottom: 2px solid #000; margin-bottom: 22px; font-family: var(--sans); }
+.doc-org { font-size: 12pt; text-transform: uppercase; letter-spacing: .04em; color: #555; margin-bottom: 6px; }
+.doc-title { font-size: 12pt; font-weight: bold; text-transform: uppercase; letter-spacing: .03em; }
+.doc-subtitle { font-size: 12pt; color: #333; margin-top: 4px; }
+.doc-meta { display: flex; justify-content: space-between; font-size: 12pt; color: #555; padding-bottom: 12px; border-bottom: 2px solid #000; margin-bottom: 22px; }
 .doc-sec { margin-bottom: 18px; }
-.doc-sec-h { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #777; margin-bottom: 7px; font-family: var(--sans); }
-table.dt { width: 100%; border-collapse: collapse; font-size: 13px; }
+.doc-sec-h { font-size: 12pt; font-weight: bold; text-transform: uppercase; letter-spacing: .05em; color: #555; margin-bottom: 7px; }
+table.dt { width: 100%; border-collapse: collapse; font-size: 12pt; }
 table.dt td { padding: 6px 10px; border: 1px solid #ccc; vertical-align: top; }
-table.dt td:first-child { font-family: var(--sans); font-size: 11px; font-weight: 600; color: #555; background: #f8f8f8; width: 42%; }
-.dt .sr td { font-weight: 700 !important; background: #efefef !important; font-size: 14px !important; }
-.doc-desc-box { border: 1px solid #ccc; background: #fafafa; padding: 10px 12px; font-size: 13px; line-height: 1.7; }
-.doc-conclusion { font-size: 13px; line-height: 1.8; text-align: justify; }
+table.dt td:first-child { font-weight: bold; color: #333; background: #f8f8f8; width: 42%; }
+.dt .sr td { font-weight: bold !important; background: #efefef !important; }
+.doc-desc-box { border: 1px solid #ccc; background: #fafafa; padding: 10px 12px; font-size: 12pt; line-height: 1.55; }
+.doc-conclusion { font-size: 12pt; line-height: 1.6; text-align: justify; }
 .doc-sigs { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 28px; margin-top: 30px; }
-.sig-role { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #666; font-family: var(--sans); margin-bottom: 3px; }
-.sig-name { font-size: 13px; font-weight: 600; margin-bottom: 22px; }
+.sig-role { font-size: 12pt; font-weight: bold; text-transform: uppercase; letter-spacing: .04em; color: #333; margin-bottom: 3px; }
+.sig-name { font-size: 12pt; font-weight: normal; margin-bottom: 22px; }
 .sig-line { border-bottom: 1px solid #000; margin-bottom: 3px; }
-.sig-hint { font-size: 10px; color: #aaa; font-family: var(--sans); }
-.doc-stamp { margin-top: 22px; padding-top: 10px; border-top: 1px dashed #ddd; text-align: center; font-size: 10px; color: #ccc; font-family: var(--sans); font-style: italic; }
+.sig-hint { font-size: 12pt; color: #999; }
+.doc-stamp { margin-top: 22px; padding-top: 10px; border-top: 1px dashed #ddd; text-align: center; font-size: 12pt; color: #bbb; font-style: italic; }
 
 /* ── Empty state ── */
 .empty { text-align: center; padding: 60px 20px; color: var(--soft); border: 1.5px solid var(--border); border-radius: var(--r); width: 100%; max-width: 780px; background: var(--white); }
