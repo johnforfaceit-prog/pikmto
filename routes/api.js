@@ -114,6 +114,22 @@ router.post('/build-zaklyuchenie', async (req, res) => {
     const zip = await JSZip.loadAsync(fs.readFileSync(TEMPLATE_PATH));
     let xml = await zip.file('word/document.xml').async('string');
 
+    // Таблица услуг: размножаем строку по числу услуг
+    const services = Array.isArray(fields.services) ? fields.services : [];
+    const rowRe = /<w:tr\b[^>]*>(?:(?!<\/w:tr>)[\s\S])*?\{\{S_NAME\}\}(?:(?!<\/w:tr>)[\s\S])*?<\/w:tr>/;
+    if (rowRe.test(xml) && services.length) {
+      const tmpl = xml.match(rowRe)[0];
+      const SVC_KEYS = { S_NAME:'name', S_VOL_CONTRACT:'volContract', S_VOL_PERIOD:'volPeriod', S_VOL_FACT_PERIOD:'volFactPeriod', S_VOL_FACT:'volFact', S_COST_PERIOD:'costPeriod', S_COST_FACT:'costFact' };
+      const rows = services.map((s, i) => {
+        let r = tmpl;
+        // первый <w:t> в строке — ячейка № (заменяем на порядковый номер)
+        r = r.replace(/(<w:t(?: [^>]*)?>)[\s\S]*?(<\/w:t>)/, `$1${i + 1}.$2`);
+        for (const tok in SVC_KEYS) r = r.split('{{' + tok + '}}').join(escapeXml(s[SVC_KEYS[tok]] || ''));
+        return r;
+      }).join('');
+      xml = xml.replace(rowRe, rows);
+    }
+
     for (const t of ZAK_TOKENS) {
       let v = fields[t];
       if ((v == null || v === '') && LABEL_DEFAULTS[t] != null) v = LABEL_DEFAULTS[t];
