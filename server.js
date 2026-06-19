@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Middleware ──
-app.use(express.json({ limit: '20mb' }));
+app.use(express.json({ limit: '60mb' })); // несколько фото листов по счёту
 app.use(express.urlencoded({ extended: true }));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'pik-secret',

@@ -16,7 +16,7 @@ const S = {
   apiKey:'',
   mode:'existing',                                  // existing | new
   srcB64:null, srcName:'', srcMime:null, srcText:'', srcHtml:'',
-  invB64:null, invName:'', invMime:null,
+  invFiles: [],                                     // листы по счёту: [{b64, mime, name}]
   zakDate: new Date().toISOString().split('T')[0],  // дата заключения (ISO)
   f: emptyFields()
 };
@@ -118,32 +118,74 @@ async function loadSrc(file) {
   } catch (e) { toast('Ошибка: ' + e.message); }
 }
 
-// ════ ЗАГРУЗКА ЛИСТОВ ПО СЧЁТУ ════
-async function loadInv(file) {
-  if (!file) return;
-  S.invMime = file.type || guessMime(file.name);
-  S.invName = file.name;
+// ════ ЗАГРУЗКА ЛИСТОВ ПО СЧЁТУ (несколько файлов) ════
+function onInvInput(input) { addInvFiles(input.files); input.value = ''; }
+function dropInv(e) {
+  e.preventDefault();
+  document.getElementById('dropInv').classList.remove('dragging');
+  addInvFiles(e.dataTransfer.files);
+}
 
+async function addInvFiles(fileList) {
+  if (!fileList || !fileList.length) return;
+  for (const file of fileList) {
+    try {
+      const b64 = await toBase64(file);
+      S.invFiles.push({ b64, mime: file.type || guessMime(file.name), name: file.name });
+    } catch (_) { toast('Не удалось прочитать файл: ' + file.name); }
+  }
+  renderInvZone();
+  checkReady();
+  toast('Листов по счёту: ' + S.invFiles.length);
+}
+
+function removeInvFile(i, ev) {
+  if (ev) ev.stopPropagation();
+  S.invFiles.splice(i, 1);
+  renderInvZone();
+  checkReady();
+}
+
+function renderInvZone() {
   const drop = document.getElementById('dropInv');
+  const n = S.invFiles.length;
+  const sub = document.getElementById('invSub');
+  const nm  = document.getElementById('invName');
+  const tc  = document.getElementById('invThumbs');
+
+  if (n === 0) {
+    drop.className = 'drop';
+    drop.onclick = () => document.getElementById('inInv').click();
+    document.getElementById('invIcon').textContent = '📸';
+    sub.style.display = ''; nm.style.display = 'none';
+    document.getElementById('invFooter').className = 'drop-footer';
+    tc.innerHTML = '';
+    return;
+  }
+
   drop.className = 'drop loaded-blue';
-  drop.onclick = null;
+  drop.onclick = () => document.getElementById('inInv').click();   // клик добавляет ещё файлы
   document.getElementById('invIcon').textContent = '🧾';
-  document.getElementById('invSub').style.display = 'none';
-  document.getElementById('invName').style.display = 'block';
-  document.getElementById('invName').textContent = '✓ ' + file.name;
+  sub.style.display = 'none';
+  nm.style.display = 'block';
+  nm.textContent = '✓ ' + n + ' ' + plural(n, 'файл', 'файла', 'файлов') + ' · нажмите, чтобы добавить';
   document.getElementById('invFooter').className = 'drop-footer visible';
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    S.invB64 = e.target.result.split(',')[1];
-    if ((file.type || '').startsWith('image/')) {
-      const thumb = document.getElementById('invThumb');
-      thumb.src = e.target.result; thumb.style.display = 'block';
+  tc.innerHTML = '';
+  S.invFiles.forEach((f, i) => {
+    const cell = document.createElement('div'); cell.className = 'inv-thumb-cell';
+    if ((f.mime || '').startsWith('image/')) {
+      const img = document.createElement('img'); img.src = 'data:' + f.mime + ';base64,' + f.b64; img.className = 'inv-thumb-sm';
+      cell.appendChild(img);
+    } else {
+      const d = document.createElement('div'); d.className = 'inv-thumb-doc'; d.textContent = (f.mime === 'application/pdf' ? 'PDF' : 'ФАЙЛ');
+      cell.appendChild(d);
     }
-    checkReady();
-  };
-  reader.onerror = () => toast('Ошибка чтения файла');
-  reader.readAsDataURL(file);
+    const x = document.createElement('button'); x.className = 'inv-thumb-x'; x.textContent = '✕'; x.title = 'Удалить';
+    x.onclick = (ev) => removeInvFile(i, ev);
+    cell.appendChild(x);
+    tc.appendChild(cell);
+  });
 }
 
 function checkReady() {
@@ -166,7 +208,7 @@ async function runExtract() {
     } else {
       await extractContract();
     }
-    if (S.invB64) await extractInvoice();
+    if (S.invFiles.length) await extractInvoice();
 
     buildForm(true);
     renderDoc();
@@ -215,32 +257,41 @@ async function extractContract() {
   });
 }
 
-// Извлечение данных из листов по счёту
+// Извлечение данных из листов по счёту (несколько изображений по одному контракту)
 async function extractInvoice() {
-  const prompt = `Ты извлекаешь данные из листов по счёту (счёт на оплату и документ о приёмке — УПД/СЧФДОП) для заключения экспертной комиссии.
+  const prompt = `Тебе даны несколько изображений листов по счёту по одному муниципальному контракту. Среди них могут быть:
+— лист «Счёт на оплату» (вверху написано «Счёт на оплату № ... от ...»);
+— лист «Счёт-фактура / Универсальный передаточный документ (УПД)» (вверху написано «Счёт-фактура № ... от ...»);
+— скриншот системы исполнения контракта (ЕИС/ПИК) с таблицей «Документы, подтверждающие исполнение контрактного обязательства», где есть строки «Счёт на оплату» и «Акт (ДОП), формат УПД...» со столбцами: Номер, Дата предоставления (план), Дата предоставления (факт).
+
 Верни ТОЛЬКО JSON без пояснений и markdown:
 {
-  "S_NAME": "наименование оказываемых услуг",
-  "S_VOL_CONTRACT": "объём оказания услуг согласно контракту",
-  "S_VOL_PERIOD": "объём оказания услуг за указанный период",
-  "S_VOL_FACT_PERIOD": "объём оказания услуг по факту за указанный период",
+  "S_NAME": "общее наименование оказанных услуг (можно из предмета счёта)",
+  "S_VOL_CONTRACT": "общий объём услуг согласно контракту, если виден",
+  "S_VOL_PERIOD": "объём услуг за указанный период",
+  "S_VOL_FACT_PERIOD": "объём услуг по факту за период",
   "S_VOL_FACT": "объём оказанных услуг по факту",
-  "S_COST_PERIOD": "стоимость оказания услуг за период без НДС, числом",
-  "S_COST_FACT": "стоимость оказанных услуг без НДС, числом",
-  "INV_NUM": "номер счёта на оплату",
-  "INV_DATE": "дата счёта в формате ДД.ММ.ГГГГ",
-  "UPD_NUM": "номер документа о приёмке (УПД/СЧФДОП)",
-  "UPD_DATE": "дата документа о приёмке в формате ДД.ММ.ГГГГ"
+  "S_COST_PERIOD": "итоговая стоимость за период без НДС, числом",
+  "S_COST_FACT": "итоговая стоимость оказанных услуг без НДС, числом",
+  "INV_NUM": "номер счёта на оплату — из строки «Счёт на оплату» таблицы системы (ЕИС/ПИК)",
+  "INV_DATE": "дата счёта на оплату — с самого листа «Счёт на оплату № ... от ...», формат ДД.ММ.ГГГГ",
+  "INV_DATE_PLAN": "дата предоставления (план) для строки «Счёт на оплату» из таблицы системы (ЕИС/ПИК), формат ДД.ММ.ГГГГ",
+  "INV_DATE_FACT": "дата предоставления (факт) для строки «Счёт на оплату» из таблицы системы (ЕИС/ПИК), формат ДД.ММ.ГГГГ",
+  "UPD_NUM": "номер документа о приёмке — из строки «Акт (ДОП), формат УПД» таблицы системы (например «б/н»)",
+  "UPD_DATE": "дата документа о приёмке — с листа, где вверху написано «Счёт-фактура № ... от ...», формат ДД.ММ.ГГГГ",
+  "UPD_DATE_PLAN": "дата предоставления (план) для строки «Акт (ДОП), формат УПД» из таблицы системы (ЕИС/ПИК), формат ДД.ММ.ГГГГ",
+  "UPD_DATE_FACT": "дата предоставления (факт) для строки «Акт (ДОП), формат УПД» из таблицы системы (ЕИС/ПИК), формат ДД.ММ.ГГГГ"
 }
-Если поле не найдено — пустая строка. Суммы числом без пробелов и символа валюты.`;
+Строгие правила источников:
+— Номера документов (INV_NUM, UPD_NUM) и ВСЕ даты предоставления (план/факт) бери ТОЛЬКО из таблицы системы исполнения (ЕИС/ПИК) — обычно это последнее изображение.
+— Дату счёта (INV_DATE) бери ТОЛЬКО с листа «Счёт на оплату».
+— Дату приёмки (UPD_DATE) бери ТОЛЬКО с листа, где вверху написано «Счёт-фактура».
+— Если поле не найдено — пустая строка. Даты в формате ДД.ММ.ГГГГ. Суммы числом без пробелов и символа валюты.`;
 
-  const parsed = await callClaude(invContent(prompt), 1500);
-  ['S_NAME','S_VOL_CONTRACT','S_VOL_PERIOD','S_VOL_FACT_PERIOD','S_VOL_FACT','S_COST_PERIOD','S_COST_FACT','INV_NUM','INV_DATE','UPD_NUM','UPD_DATE']
+  const parsed = await callClaude(invContent(prompt), 2000);
+  ['S_NAME','S_VOL_CONTRACT','S_VOL_PERIOD','S_VOL_FACT_PERIOD','S_VOL_FACT','S_COST_PERIOD','S_COST_FACT',
+   'INV_NUM','INV_DATE','INV_DATE_PLAN','INV_DATE_FACT','UPD_NUM','UPD_DATE','UPD_DATE_PLAN','UPD_DATE_FACT']
     .forEach(k => { if (parsed[k] != null && parsed[k] !== '') S.f[k] = String(parsed[k]).trim(); });
-
-  // Даты предоставления по умолчанию = дате документа
-  if (S.f.INV_DATE) { S.f.INV_DATE_PLAN = S.f.INV_DATE_PLAN || S.f.INV_DATE; S.f.INV_DATE_FACT = S.f.INV_DATE_FACT || S.f.INV_DATE; }
-  if (S.f.UPD_DATE) { S.f.UPD_DATE_PLAN = S.f.UPD_DATE_PLAN || S.f.UPD_DATE; S.f.UPD_DATE_FACT = S.f.UPD_DATE_FACT || S.f.UPD_DATE; }
 }
 
 // Контент сообщения для источника (контракт): фото/PDF или текст DOCX
@@ -252,13 +303,18 @@ function srcContent(prompt) {
   return [{ type:'text', text: prompt + '\n\nТекст документа:\n' + (S.srcText || '') }];
 }
 
-// Контент сообщения для листов по счёту
+// Контент сообщения для листов по счёту — все загруженные изображения/PDF
 function invContent(prompt) {
-  if (S.invMime === 'application/pdf')
-    return [{ type:'document', source:{ type:'base64', media_type:'application/pdf', data:S.invB64 } }, { type:'text', text:prompt }];
-  if ((S.invMime || '').startsWith('image/'))
-    return [{ type:'image', source:{ type:'base64', media_type:S.invMime, data:S.invB64 } }, { type:'text', text:prompt }];
-  return [{ type:'text', text: prompt + '\n\n(Файл листов по счёту приложен текстом не поддерживается — приложите фото, скан или PDF)' }];
+  const content = [];
+  S.invFiles.forEach((f, i) => {
+    content.push({ type: 'text', text: `Лист по счёту №${i + 1} (${f.name}):` });
+    if (f.mime === 'application/pdf')
+      content.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: f.b64 } });
+    else if ((f.mime || '').startsWith('image/'))
+      content.push({ type: 'image', source: { type: 'base64', media_type: f.mime, data: f.b64 } });
+  });
+  content.push({ type: 'text', text: prompt });
+  return content;
 }
 
 async function callClaude(content, max_tokens) {
@@ -540,18 +596,11 @@ function clearSrc(ev) {
 
 function clearInv(ev) {
   ev.stopPropagation();
-  S.invB64 = null; S.invMime = null; S.invName = '';
-  const drop = document.getElementById('dropInv');
-  drop.className = 'drop';
-  drop.onclick = () => document.getElementById('inInv').click();
-  document.getElementById('invIcon').textContent = '📸';
-  document.getElementById('invSub').style.display = '';
-  document.getElementById('invName').style.display = 'none';
-  document.getElementById('invFooter').className = 'drop-footer';
-  const thumb = document.getElementById('invThumb'); thumb.style.display = 'none'; thumb.src = '';
+  S.invFiles = [];
   document.getElementById('inInv').value = '';
+  renderInvZone();
   checkReady();
-  toast('Файл удалён');
+  toast('Листы по счёту удалены');
 }
 
 // ════ ПРОСМОТР ════
@@ -567,11 +616,13 @@ function previewSrc(ev) {
 
 function previewInv(ev) {
   ev.stopPropagation();
-  if (!S.invB64) { toast('Сначала загрузите листы по счёту'); return; }
-  document.getElementById('modalTitle').textContent = S.invName || 'Листы по счёту';
-  document.getElementById('modalBody').innerHTML = S.invMime === 'application/pdf'
-    ? '<p style="text-align:center;color:#888;padding:40px 0">PDF загружен и готов к обработке</p>'
-    : `<img src="data:${S.invMime};base64,${S.invB64}" style="width:100%;border-radius:6px;">`;
+  if (!S.invFiles.length) { toast('Сначала загрузите листы по счёту'); return; }
+  document.getElementById('modalTitle').textContent = 'Листы по счёту (' + S.invFiles.length + ')';
+  document.getElementById('modalBody').innerHTML = S.invFiles.map(f =>
+    (f.mime || '').startsWith('image/')
+      ? `<img src="data:${f.mime};base64,${f.b64}" style="width:100%;border-radius:6px;margin-bottom:10px;">`
+      : `<p style="text-align:center;color:#888;padding:20px 0">${he(f.name)} — ${f.mime === 'application/pdf' ? 'PDF' : 'файл'} готов к обработке</p>`
+  ).join('');
   document.getElementById('modalOverlay').className = 'modal-overlay open';
 }
 
@@ -583,6 +634,12 @@ function closeModalBtn() {
 
 // ════ УТИЛИТЫ ════
 function he(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function plural(n, one, few, many) {
+  const m10 = n % 10, m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+  return many;
+}
 function guessMime(name) {
   const n = (name || '').toLowerCase();
   if (n.endsWith('.pdf')) return 'application/pdf';
