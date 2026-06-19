@@ -432,38 +432,42 @@ function renderDoc() {
     </div>
     <div class="doc-meta"><span>г. Красногорск</span><span>${zakDateStr}</span></div>
 
-    <p class="doc-p">Контракт № ${dash(f.CONTRACT_NUM)} от ${dash(f.CONTRACT_DATE)}. ${dash(f.SUBJECT)};</p>
-    <p class="doc-p">Наименование исполнителя: ${dash(f.EXECUTOR)}</p>
-    <p class="doc-p">Место нахождения, адрес: ${dash(f.ADDRESS)}</p>
+    <div class="doc-item"><span class="doc-num">1.</span><div class="doc-item-body">Контракт № ${dash(f.CONTRACT_NUM)} от ${dash(f.CONTRACT_DATE)}. ${dash(f.SUBJECT)};</div></div>
+    <div class="doc-item"><span class="doc-num">2.</span><div class="doc-item-body">Наименование исполнителя: ${dash(f.EXECUTOR)}</div></div>
+    <div class="doc-item"><span class="doc-num">3.</span><div class="doc-item-body">Место нахождения, адрес: ${dash(f.ADDRESS)}</div></div>
 
-    <p class="doc-p">Информация об исполнении Контракта, в том числе о промежуточных результатах исполнения Контракта оказания услуг:</p>
-    <div class="doc-tscroll">
+    <div class="doc-item"><span class="doc-num">4.</span><div class="doc-item-body">
+      <p class="doc-p">Информация об исполнении Контракта, в том числе о промежуточных результатах исполнения Контракта оказания услуг:</p>
+      <div class="doc-tscroll">
+        <table class="zt">
+          <tr>
+            <th>№</th><th>Наименование оказываемых услуг</th>
+            <th>Объём согласно Контракту</th><th>Объём за указанный период</th>
+            <th>Объём по факту за период</th><th>Объём оказанных по факту</th>
+            <th>Стоимость за период (без НДС)</th><th>Стоимость оказанных (без НДС)</th>
+          </tr>
+          <tr>
+            <td>1.</td><td>${dash(f.S_NAME)}</td>
+            <td>${dash(f.S_VOL_CONTRACT)}</td><td>${dash(f.S_VOL_PERIOD)}</td>
+            <td>${dash(f.S_VOL_FACT_PERIOD)}</td><td>${dash(f.S_VOL_FACT)}</td>
+            <td>${dash(f.S_COST_PERIOD)}</td><td>${dash(f.S_COST_FACT)}</td>
+          </tr>
+        </table>
+      </div>
+    </div></div>
+
+    <div class="doc-item"><span class="doc-num">5.</span><div class="doc-item-body">
+      <p class="doc-p">Отчётная документация исполнителя:</p>
       <table class="zt">
-        <tr>
-          <th>№</th><th>Наименование оказываемых услуг</th>
-          <th>Объём согласно Контракту</th><th>Объём за указанный период</th>
-          <th>Объём по факту за период</th><th>Объём оказанных по факту</th>
-          <th>Стоимость за период (без НДС)</th><th>Стоимость оказанных (без НДС)</th>
-        </tr>
-        <tr>
-          <td>1.</td><td>${dash(f.S_NAME)}</td>
-          <td>${dash(f.S_VOL_CONTRACT)}</td><td>${dash(f.S_VOL_PERIOD)}</td>
-          <td>${dash(f.S_VOL_FACT_PERIOD)}</td><td>${dash(f.S_VOL_FACT)}</td>
-          <td>${dash(f.S_COST_PERIOD)}</td><td>${dash(f.S_COST_FACT)}</td>
-        </tr>
+        <tr><th>№</th><th>Наименование документа</th><th>№ документа</th><th>Дата документа</th><th>Предоставление (план)</th><th>Предоставление (факт)</th></tr>
+        <tr><td>1.</td><td>Счёт на оплату</td><td>${dash(f.INV_NUM)}</td><td>${dash(f.INV_DATE)}</td><td>${dash(invPlan)}</td><td>${dash(invFact)}</td></tr>
+        <tr><td>2.</td><td>Документ о приёмке (функция СЧФДОП)*</td><td>${dash(f.UPD_NUM)}</td><td>${dash(f.UPD_DATE)}</td><td>${dash(updPlan)}</td><td>${dash(updFact)}</td></tr>
       </table>
-    </div>
+    </div></div>
 
-    <p class="doc-p">Отчётная документация исполнителя:</p>
-    <table class="zt">
-      <tr><th>№</th><th>Наименование документа</th><th>№ документа</th><th>Дата документа</th><th>Предоставление (план)</th><th>Предоставление (факт)</th></tr>
-      <tr><td>1.</td><td>Счёт на оплату</td><td>${dash(f.INV_NUM)}</td><td>${dash(f.INV_DATE)}</td><td>${dash(invPlan)}</td><td>${dash(invFact)}</td></tr>
-      <tr><td>2.</td><td>Документ о приёмке (функция СЧФДОП)*</td><td>${dash(f.UPD_NUM)}</td><td>${dash(f.UPD_DATE)}</td><td>${dash(updPlan)}</td><td>${dash(updFact)}</td></tr>
-    </table>
-
-    <p class="doc-p">Дополнительные документы: не предусмотрено.</p>
-    <p class="doc-p doc-just">В ходе проведения визуального осмотра оказанных услуг, на предмет соответствия указанных услуг количеству, ассортименту, а также иным требованиям, предусмотренными Контрактом, комиссией не выявлены факты ненадлежащего исполнения Контракта исполнителем. Предоставленные документы для принятия и оплаты услуг проверены, соответствуют условиям Контракта. Документы, не соответствующие условиям контракта: не выявлены.</p>
-    <p class="doc-p doc-just"><b>Заключение комиссии:</b> Услуга поставлена полностью, в соответствии с условиями Контракта и подлежит приёмке. Данное заключение служит основанием для подписания Универсального передаточного документа (СЧФДОП), формата УПД, утверждённого приказом ФНС России*.</p>
+    <div class="doc-item"><span class="doc-num">6.</span><div class="doc-item-body">Дополнительные документы: не предусмотрено.</div></div>
+    <div class="doc-item"><span class="doc-num">7.</span><div class="doc-item-body doc-just">В ходе проведения визуального осмотра оказанных услуг, на предмет соответствия указанных услуг количеству, ассортименту, а также иным требованиям, предусмотренными Контрактом, комиссией не выявлены факты ненадлежащего исполнения Контракта исполнителем. Предоставленные документы для принятия и оплаты услуг проверены, соответствуют условиям Контракта. Документы, не соответствующие условиям контракта: не выявлены.</div></div>
+    <div class="doc-item"><span class="doc-num">8.</span><div class="doc-item-body doc-just"><b>Заключение комиссии:</b> Услуга поставлена полностью, в соответствии с условиями Контракта и подлежит приёмке. Данное заключение служит основанием для подписания Универсального передаточного документа (СЧФДОП), формата УПД, утверждённого приказом ФНС России*.</div></div>
 
     <div class="doc-sign-list">
       ${signRow('Председатель комиссии')}
