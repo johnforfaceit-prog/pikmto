@@ -11,8 +11,16 @@ const TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'zaklyuchenie_temp
 const ZAK_TOKENS = [
   'ZAK_NUM','ZAK_DAY','ZAK_MONTH','CONTRACT_NUM','CONTRACT_DATE','SUBJECT','EXECUTOR','ADDRESS',
   'S_NAME','S_VOL_CONTRACT','S_VOL_PERIOD','S_VOL_FACT_PERIOD','S_VOL_FACT','S_COST_PERIOD','S_COST_FACT',
-  'INV_NUM','INV_DATE','INV_DATE_PLAN','INV_DATE_FACT','UPD_NUM','UPD_DATE','UPD_DATE_PLAN','UPD_DATE_FACT'
+  'INV_NUM','INV_DATE','INV_DATE_PLAN','INV_DATE_FACT','UPD_NUM','UPD_DATE','UPD_DATE_PLAN','UPD_DATE_FACT',
+  'LBL_EXECUTOR','LBL_ADDRESS','LBL_INV','LBL_UPD'
 ];
+// Подписи строк: если значение не передано — подставляем стандартный текст
+const LABEL_DEFAULTS = {
+  LBL_EXECUTOR: 'Наименование исполнителя',
+  LBL_ADDRESS:  'Место нахождения, адрес',
+  LBL_INV:      'Счёт на оплату',
+  LBL_UPD:      'Документ о приёмке (функция СЧФДОП)*'
+};
 function escapeXml(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -105,7 +113,9 @@ router.post('/build-zaklyuchenie', async (req, res) => {
     let xml = await zip.file('word/document.xml').async('string');
 
     for (const t of ZAK_TOKENS) {
-      xml = xml.split('{{' + t + '}}').join(escapeXml(fields[t]));
+      let v = fields[t];
+      if ((v == null || v === '') && LABEL_DEFAULTS[t] != null) v = LABEL_DEFAULTS[t];
+      xml = xml.split('{{' + t + '}}').join(escapeXml(v));
     }
 
     zip.file('word/document.xml', xml);

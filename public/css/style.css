@@ -155,6 +155,12 @@ table.dt td:first-child { font-weight: bold; color: #333; background: #f8f8f8; w
 .empty-title { font-size: 15px; font-weight: 700; color: var(--dark); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; font-family: var(--sans); }
 .empty-sub { font-size: 13px; line-height: 1.8; color: var(--mid); }
 
+/* ── Редактируемые подписи строк ── */
+.lbl-edit { display: block; width: 100%; border: 1px dashed transparent; background: transparent; font-size: 11px; font-weight: 600; color: var(--mid); margin-bottom: 3px; padding: 2px 5px; border-radius: 4px; font-family: var(--sans); outline: none; }
+.lbl-edit:hover { border-color: var(--border); }
+.lbl-edit:focus { border-color: var(--red); border-style: solid; background: var(--white); box-shadow: 0 0 0 2px var(--red-dim); color: var(--dark); }
+.lbl-row { font-weight: 600; }
+
 /* ── Миниатюры листов по счёту ── */
 .inv-thumbs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .inv-thumb-cell { position: relative; width: 58px; height: 58px; }

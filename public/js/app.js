@@ -12,16 +12,25 @@ function emptyFields() {
   };
 }
 
+// Редактируемые подписи строк (значения по умолчанию)
+const LABEL_DEFAULTS = {
+  LBL_EXECUTOR: 'Наименование исполнителя',
+  LBL_ADDRESS:  'Место нахождения, адрес',
+  LBL_INV:      'Счёт на оплату',
+  LBL_UPD:      'Документ о приёмке (функция СЧФДОП)*'
+};
+
 const S = {
   apiKey:'',
   mode:'existing',                                  // existing | new
   srcB64:null, srcName:'', srcMime:null, srcText:'', srcHtml:'',
   invFiles: [],                                     // листы по счёту: [{b64, mime, name}]
   zakDate: new Date().toISOString().split('T')[0],  // дата заключения (ISO)
-  f: emptyFields()
+  f: emptyFields(),
+  lbl: Object.assign({}, LABEL_DEFAULTS)            // редактируемые подписи строк
 };
 
-// Поля, доступные окну правок (только содержимое документа)
+// Поля, доступные окну правок (только содержимое документа, без подписей строк)
 const FIX_FIELDS = Object.keys(emptyFields());
 
 // ════ ИНИЦИАЛИЗАЦИЯ ════
@@ -348,6 +357,14 @@ function fld(key, label, type) {
   return `<div class="field"><label>${label}</label><input type="text" id="f_${key}" value="${e(S.f[key])}" oninput="u('${key}',this)"></div>`;
 }
 
+// Поле с РЕДАКТИРУЕМОЙ подписью (подпись строки берётся из S.lbl)
+function fldL(labelKey, valueKey) {
+  return `<div class="field">
+    <input class="lbl-edit" value="${e(S.lbl[labelKey])}" oninput="uLbl('${labelKey}',this)" title="Подпись строки — можно изменить">
+    <input type="text" id="f_${valueKey}" value="${e(S.f[valueKey])}" oninput="u('${valueKey}',this)">
+  </div>`;
+}
+
 function buildForm(markFilled) {
   document.getElementById('fieldsArea').innerHTML = `
     <div class="fgroup">
@@ -364,8 +381,8 @@ function buildForm(markFilled) {
         ${fld('CONTRACT_DATE','Дата контракта (ДД.ММ.ГГГГ)')}
       </div>
       ${fld('SUBJECT','Предмет контракта','textarea')}
-      ${fld('EXECUTOR','Наименование исполнителя')}
-      ${fld('ADDRESS','Место нахождения, адрес')}
+      ${fldL('LBL_EXECUTOR','EXECUTOR')}
+      ${fldL('LBL_ADDRESS','ADDRESS')}
     </div>
     <div class="fgroup">
       <div class="fgroup-label">Услуги за период</div>
@@ -385,6 +402,7 @@ function buildForm(markFilled) {
     </div>
     <div class="fgroup">
       <div class="fgroup-label">Счёт на оплату</div>
+      <div class="field"><label>Подпись строки в документе</label><input type="text" class="lbl-row" value="${e(S.lbl.LBL_INV)}" oninput="uLbl('LBL_INV',this)"></div>
       <div class="row2">
         ${fld('INV_NUM','№ счёта')}
         ${fld('INV_DATE','Дата счёта')}
@@ -396,6 +414,7 @@ function buildForm(markFilled) {
     </div>
     <div class="fgroup">
       <div class="fgroup-label">Документ о приёмке (УПД / СЧФДОП)</div>
+      <div class="field"><label>Подпись строки в документе</label><input type="text" class="lbl-row" value="${e(S.lbl.LBL_UPD)}" oninput="uLbl('LBL_UPD',this)"></div>
       <div class="row2">
         ${fld('UPD_NUM','№ документа')}
         ${fld('UPD_DATE','Дата документа')}
@@ -414,6 +433,7 @@ function buildForm(markFilled) {
 function e(s) { return (s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function u(key, el) { S.f[key] = el.value; el.classList.remove('ai-filled'); renderDoc(); }
 function uDate(el) { S.zakDate = el.value; renderDoc(); }
+function uLbl(key, el) { S.lbl[key] = el.value; renderDoc(); }
 
 // ════ РЕНДЕР ДОКУМЕНТА ════
 function renderDoc() {
@@ -433,8 +453,8 @@ function renderDoc() {
     <div class="doc-meta"><span>г. Красногорск</span><span>${zakDateStr}</span></div>
 
     <div class="doc-item"><span class="doc-num">1.</span><div class="doc-item-body">Контракт № ${dash(f.CONTRACT_NUM)} от ${dash(f.CONTRACT_DATE)}. ${dash(f.SUBJECT)};</div></div>
-    <div class="doc-item"><span class="doc-num">2.</span><div class="doc-item-body">Наименование исполнителя: ${dash(f.EXECUTOR)}</div></div>
-    <div class="doc-item"><span class="doc-num">3.</span><div class="doc-item-body">Место нахождения, адрес: ${dash(f.ADDRESS)}</div></div>
+    <div class="doc-item"><span class="doc-num">2.</span><div class="doc-item-body">${he(S.lbl.LBL_EXECUTOR)}: ${dash(f.EXECUTOR)}</div></div>
+    <div class="doc-item"><span class="doc-num">3.</span><div class="doc-item-body">${he(S.lbl.LBL_ADDRESS)}: ${dash(f.ADDRESS)}</div></div>
 
     <div class="doc-item"><span class="doc-num">4.</span><div class="doc-item-body">
       <p class="doc-p">Информация об исполнении Контракта, в том числе о промежуточных результатах исполнения Контракта оказания услуг:</p>
@@ -460,8 +480,8 @@ function renderDoc() {
       <p class="doc-p">Отчётная документация исполнителя:</p>
       <table class="zt">
         <tr><th>№</th><th>Наименование документа</th><th>№ документа</th><th>Дата документа</th><th>Предоставление (план)</th><th>Предоставление (факт)</th></tr>
-        <tr><td>1.</td><td>Счёт на оплату</td><td>${dash(f.INV_NUM)}</td><td>${dash(f.INV_DATE)}</td><td>${dash(invPlan)}</td><td>${dash(invFact)}</td></tr>
-        <tr><td>2.</td><td>Документ о приёмке (функция СЧФДОП)*</td><td>${dash(f.UPD_NUM)}</td><td>${dash(f.UPD_DATE)}</td><td>${dash(updPlan)}</td><td>${dash(updFact)}</td></tr>
+        <tr><td>1.</td><td>${dash(S.lbl.LBL_INV)}</td><td>${dash(f.INV_NUM)}</td><td>${dash(f.INV_DATE)}</td><td>${dash(invPlan)}</td><td>${dash(invFact)}</td></tr>
+        <tr><td>2.</td><td>${dash(S.lbl.LBL_UPD)}</td><td>${dash(f.UPD_NUM)}</td><td>${dash(f.UPD_DATE)}</td><td>${dash(updPlan)}</td><td>${dash(updFact)}</td></tr>
       </table>
     </div></div>
 
@@ -495,7 +515,7 @@ function signRow(role) {
 
 // ════ СКАЧИВАНИЕ ════
 async function downloadDocx() {
-  const fields = Object.assign({}, S.f);
+  const fields = Object.assign({}, S.f, S.lbl);
   const dd = S.zakDate ? S.zakDate.split('-') : null;
   fields.ZAK_DAY   = dd ? dd[2] : '';
   fields.ZAK_MONTH = dd ? MONTHS_GEN[parseInt(dd[1]) - 1] : '';
