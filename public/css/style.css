@@ -155,6 +155,31 @@ table.dt td:first-child { font-weight: bold; color: #333; background: #f8f8f8; w
 .empty-title { font-size: 15px; font-weight: 700; color: var(--dark); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; font-family: var(--sans); }
 .empty-sub { font-size: 13px; line-height: 1.8; color: var(--mid); }
 
+/* ── Режим работы ── */
+.mode-wrap { padding: 12px 16px 0; }
+.mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--r); padding: 3px; }
+.mode-tab { padding: 8px 6px; background: transparent; border: none; border-radius: 6px; font-family: var(--sans); font-size: 12px; font-weight: 600; color: var(--soft); cursor: pointer; transition: all .12s; }
+.mode-tab.active { background: var(--red); color: #fff; }
+.mode-tab:not(.active):hover { color: var(--red); }
+.mode-hint { font-size: 11px; line-height: 1.5; color: var(--mid); margin-top: 8px; }
+
+/* ── Заключение: абзацы и таблицы ── */
+.doc-p { font-size: 12pt; line-height: 1.5; margin-bottom: 9px; }
+.doc-just { text-align: justify; }
+.doc-tscroll { overflow-x: auto; margin-bottom: 9px; }
+table.zt { width: 100%; border-collapse: collapse; font-size: 10.5pt; margin-bottom: 9px; }
+table.zt th, table.zt td { border: 1px solid #000; padding: 4px 6px; vertical-align: top; text-align: center; }
+table.zt th { font-weight: bold; background: #f4f4f4; }
+.doc-tscroll table.zt { min-width: 920px; }
+.doc-sign-list { margin-top: 24px; }
+.sign-row { margin-bottom: 16px; }
+.sign-role { font-size: 12pt; margin-bottom: 14px; }
+.sign-cols { display: grid; grid-template-columns: 1.6fr 1fr 1.4fr; gap: 22px; }
+.sign-col { text-align: center; }
+.sign-line { border-bottom: 1px solid #000; height: 1px; margin-bottom: 3px; }
+.sign-cap { font-size: 9pt; color: #555; }
+.ph { color: #b00; }
+
 /* ── Fix box ── */
 .fixbox { width: 100%; max-width: 780px; margin-top: 22px; background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; display: none; }
 .fixbox.visible { display: block; }
