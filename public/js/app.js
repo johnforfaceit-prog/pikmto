@@ -25,7 +25,6 @@ const S = {
   mode:'existing',                                  // existing | new
   srcB64:null, srcName:'', srcMime:null, srcText:'', srcHtml:'',
   invFiles: [],                                     // листы по счёту: [{b64, mime, name}]
-  zakDate: new Date().toISOString().split('T')[0],  // дата заключения (ISO)
   f: emptyFields(),
   lbl: Object.assign({}, LABEL_DEFAULTS)            // редактируемые подписи строк
 };
@@ -369,10 +368,8 @@ function buildForm(markFilled) {
   document.getElementById('fieldsArea').innerHTML = `
     <div class="fgroup">
       <div class="fgroup-label">Заключение</div>
-      <div class="row2">
-        <div class="field"><label>№ заключения</label><input type="text" id="f_ZAK_NUM" value="${e(S.f.ZAK_NUM)}" oninput="u('ZAK_NUM',this)"></div>
-        <div class="field"><label>Дата заключения</label><input type="date" id="f_zakDate" value="${S.zakDate}" oninput="uDate(this)"></div>
-      </div>
+      <div class="field"><label>№ заключения</label><input type="text" id="f_ZAK_NUM" value="${e(S.f.ZAK_NUM)}" oninput="u('ZAK_NUM',this)"></div>
+      <div class="field-note">Дата заключения в документе остаётся пустой («___» __________ 2026 г.) — ставится от руки.</div>
     </div>
     <div class="fgroup">
       <div class="fgroup-label">Контракт</div>
@@ -432,15 +429,13 @@ function buildForm(markFilled) {
 
 function e(s) { return (s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function u(key, el) { S.f[key] = el.value; el.classList.remove('ai-filled'); renderDoc(); }
-function uDate(el) { S.zakDate = el.value; renderDoc(); }
 function uLbl(key, el) { S.lbl[key] = el.value; renderDoc(); }
 
 // ════ РЕНДЕР ДОКУМЕНТА ════
 function renderDoc() {
   const f = S.f;
   const dash = v => v ? he(v) : '<span class="ph">—</span>';
-  const dd = S.zakDate ? S.zakDate.split('-') : null;
-  const zakDateStr = dd ? `«${dd[2]}» ${MONTHS_GEN[parseInt(dd[1]) - 1]} ${dd[0]} г.` : '«___» __________ ____ г.';
+  const zakDateStr = '«___» __________ 2026 г.'; // дата заключения всегда пустая — ставится от руки
   const invPlan = f.INV_DATE_PLAN || f.INV_DATE, invFact = f.INV_DATE_FACT || f.INV_DATE;
   const updPlan = f.UPD_DATE_PLAN || f.UPD_DATE, updFact = f.UPD_DATE_FACT || f.UPD_DATE;
 
@@ -518,9 +513,8 @@ function signRow(role) {
 // ════ СКАЧИВАНИЕ ════
 async function downloadDocx() {
   const fields = Object.assign({}, S.f, S.lbl);
-  const dd = S.zakDate ? S.zakDate.split('-') : null;
-  fields.ZAK_DAY   = dd ? dd[2] : '';
-  fields.ZAK_MONTH = dd ? MONTHS_GEN[parseInt(dd[1]) - 1] : '';
+  fields.ZAK_DAY   = '___';        // дата заключения всегда пустая — ставится от руки
+  fields.ZAK_MONTH = '__________';
   fields.INV_DATE_PLAN = fields.INV_DATE_PLAN || fields.INV_DATE;
   fields.INV_DATE_FACT = fields.INV_DATE_FACT || fields.INV_DATE;
   fields.UPD_DATE_PLAN = fields.UPD_DATE_PLAN || fields.UPD_DATE;
