@@ -2,14 +2,17 @@
 const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 const SUBJECT_DEFAULT = 'Оказание услуг по ремонту и техническому обслуживанию специального электронного оборудования в 2026 году';
 
-// Поля = токены шаблона заключения
+// Поля = токены шаблона заключения (без услуг — они в массиве S.services)
 function emptyFields() {
   return {
     ZAK_NUM:'', CONTRACT_NUM:'', CONTRACT_DATE:'', SUBJECT:'', EXECUTOR:'', ADDRESS:'',
-    S_NAME:'', S_VOL_CONTRACT:'', S_VOL_PERIOD:'', S_VOL_FACT_PERIOD:'', S_VOL_FACT:'', S_COST_PERIOD:'', S_COST_FACT:'',
     INV_NUM:'', INV_DATE:'', INV_DATE_PLAN:'', INV_DATE_FACT:'',
     UPD_NUM:'', UPD_DATE:'', UPD_DATE_PLAN:'', UPD_DATE_FACT:''
   };
+}
+// Одна услуга (строка таблицы «Информация об исполнении Контракта»)
+function emptyService() {
+  return { name:'', volContract:'', volPeriod:'', volFactPeriod:'', volFact:'', costPeriod:'', costFact:'' };
 }
 
 // Редактируемые подписи строк (значения по умолчанию)
@@ -26,6 +29,7 @@ const S = {
   srcB64:null, srcName:'', srcMime:null, srcText:'', srcHtml:'',
   invFiles: [],                                     // листы по счёту: [{b64, mime, name}]
   f: emptyFields(),
+  services: [emptyService()],                       // услуги: по строке на позицию счёта
   lbl: Object.assign({}, LABEL_DEFAULTS)            // редактируемые подписи строк
 };
 
@@ -279,13 +283,17 @@ async function extractInvoice() {
 
 Верни ТОЛЬКО JSON без пояснений и markdown:
 {
-  "S_NAME": "общее наименование оказанных услуг (можно из предмета счёта)",
-  "S_VOL_CONTRACT": "общий объём услуг согласно контракту, если виден",
-  "S_VOL_PERIOD": "объём услуг за указанный период",
-  "S_VOL_FACT_PERIOD": "объём услуг по факту за период",
-  "S_VOL_FACT": "объём оказанных услуг по факту",
-  "S_COST_PERIOD": "итоговая стоимость за период без НДС, числом",
-  "S_COST_FACT": "итоговая стоимость оказанных услуг без НДС, числом",
+  "services": [
+    {
+      "name": "наименование услуги (столбец «Товар (Услуга)»)",
+      "volContract": "объём согласно контракту (обычно столбец «Кол-во»)",
+      "volPeriod": "объём за указанный период (столбец «Кол-во»)",
+      "volFactPeriod": "объём по факту за период (столбец «Кол-во»)",
+      "volFact": "объём оказанных по факту (столбец «Кол-во»)",
+      "costPeriod": "стоимость за период без НДС (столбец «Сумма» по этой строке), числом",
+      "costFact": "стоимость оказанных без НДС (столбец «Сумма» по этой строке), числом"
+    }
+  ],
   "INV_NUM": "номер счёта на оплату — из строки «Счёт на оплату» таблицы системы (ЕИС/ПИК)",
   "INV_DATE": "дата счёта на оплату — с самого листа «Счёт на оплату № ... от ...», формат ДД.ММ.ГГГГ",
   "INV_DATE_PLAN": "дата предоставления (план) для строки «Счёт на оплату» из таблицы системы (ЕИС/ПИК), формат ДД.ММ.ГГГГ",
@@ -296,16 +304,26 @@ async function extractInvoice() {
   "UPD_DATE_FACT": "дата предоставления (факт) для строки «Акт (ДОП), формат УПД» из таблицы системы (ЕИС/ПИК), формат ДД.ММ.ГГГГ"
 }
 Строгие правила источников:
+— В массиве "services" верни ОТДЕЛЬНЫЙ объект на КАЖДУЮ позицию (строку) таблицы товаров/услуг счёта. Сколько строк в счёте — столько объектов.
 — Номера документов (INV_NUM, UPD_NUM) и ВСЕ даты предоставления (план/факт) бери ТОЛЬКО из таблицы системы исполнения (ЕИС/ПИК) — обычно это последнее изображение.
 — Дату счёта (INV_DATE) бери ТОЛЬКО с листа «Счёт на оплату».
 — Дату приёмки (UPD_DATE) бери ТОЛЬКО с листа, где вверху написано «Счёт-фактура».
 — Если поле не найдено — пустая строка. Даты в формате ДД.ММ.ГГГГ. Суммы числом без пробелов и символа валюты.`;
 
-  const parsed = await callClaude(invContent(prompt), 2000);
-  ['S_NAME','S_VOL_CONTRACT','S_VOL_PERIOD','S_VOL_FACT_PERIOD','S_VOL_FACT','S_COST_PERIOD','S_COST_FACT',
-   'INV_NUM','INV_DATE','INV_DATE_PLAN','INV_DATE_FACT','UPD_NUM','UPD_DATE','UPD_DATE_PLAN','UPD_DATE_FACT']
+  const parsed = await callClaude(invContent(prompt), 3000);
+  ['INV_NUM','INV_DATE','INV_DATE_PLAN','INV_DATE_FACT','UPD_NUM','UPD_DATE','UPD_DATE_PLAN','UPD_DATE_FACT']
     .forEach(k => { if (parsed[k] != null && parsed[k] !== '') S.f[k] = String(parsed[k]).trim(); });
+
+  // Услуги: по объекту на каждую позицию счёта
+  if (Array.isArray(parsed.services) && parsed.services.length) {
+    S.services = parsed.services.map(s => ({
+      name: str(s.name), volContract: str(s.volContract), volPeriod: str(s.volPeriod),
+      volFactPeriod: str(s.volFactPeriod), volFact: str(s.volFact),
+      costPeriod: str(s.costPeriod), costFact: str(s.costFact)
+    }));
+  }
 }
+function str(v) { return v == null ? '' : String(v).trim(); }
 
 // Контент сообщения для источника (контракт): фото/PDF или текст DOCX
 function srcContent(prompt) {
@@ -364,6 +382,24 @@ function fldL(labelKey, valueKey) {
   </div>`;
 }
 
+// Динамические строки услуг
+function svcInput(i, key, ph) {
+  return `<input type="text" placeholder="${ph}" value="${e(S.services[i][key])}" oninput="uSvc(${i},'${key}',this)">`;
+}
+function servicesFormHtml() {
+  return S.services.map((s, i) => `
+    <div class="svc-item">
+      <div class="svc-head"><span>Услуга ${i + 1}</span><button class="svc-del" onclick="delService(${i})" title="Удалить">✕</button></div>
+      <textarea placeholder="Наименование оказываемых услуг" oninput="uSvc(${i},'name',this)">${e(s.name)}</textarea>
+      <div class="row2">${svcInput(i, 'volContract', 'Объём по контракту')}${svcInput(i, 'volPeriod', 'Объём за период')}</div>
+      <div class="row2">${svcInput(i, 'volFactPeriod', 'Объём по факту за период')}${svcInput(i, 'volFact', 'Объём оказанных по факту')}</div>
+      <div class="row2">${svcInput(i, 'costPeriod', 'Стоимость за период (без НДС)')}${svcInput(i, 'costFact', 'Стоимость оказанных (без НДС)')}</div>
+    </div>`).join('');
+}
+function uSvc(i, key, el) { if (S.services[i]) { S.services[i][key] = el.value; renderDoc(); } }
+function addService() { S.services.push(emptyService()); buildForm(); renderDoc(); }
+function delService(i) { S.services.splice(i, 1); if (!S.services.length) S.services.push(emptyService()); buildForm(); renderDoc(); }
+
 function buildForm(markFilled) {
   document.getElementById('fieldsArea').innerHTML = `
     <div class="fgroup">
@@ -382,20 +418,9 @@ function buildForm(markFilled) {
       ${fldL('LBL_ADDRESS','ADDRESS')}
     </div>
     <div class="fgroup">
-      <div class="fgroup-label">Услуги за период</div>
-      ${fld('S_NAME','Наименование оказываемых услуг','textarea')}
-      <div class="row2">
-        ${fld('S_VOL_CONTRACT','Объём согласно контракту')}
-        ${fld('S_VOL_PERIOD','Объём за период')}
-      </div>
-      <div class="row2">
-        ${fld('S_VOL_FACT_PERIOD','Объём по факту за период')}
-        ${fld('S_VOL_FACT','Объём оказанных по факту')}
-      </div>
-      <div class="row2">
-        ${fld('S_COST_PERIOD','Стоимость за период (без НДС)')}
-        ${fld('S_COST_FACT','Стоимость оказанных (без НДС)')}
-      </div>
+      <div class="fgroup-label">Услуги за период (по числу позиций счёта)</div>
+      ${servicesFormHtml()}
+      <button class="btn-add-svc" onclick="addService()">+ Добавить услугу</button>
     </div>
     <div class="fgroup">
       <div class="fgroup-label">Счёт на оплату</div>
@@ -438,6 +463,8 @@ function renderDoc() {
   const zakDateStr = '«___» __________ 2026 г.'; // дата заключения всегда пустая — ставится от руки
   const invPlan = f.INV_DATE_PLAN || f.INV_DATE, invFact = f.INV_DATE_FACT || f.INV_DATE;
   const updPlan = f.UPD_DATE_PLAN || f.UPD_DATE, updFact = f.UPD_DATE_FACT || f.UPD_DATE;
+  const svc = S.services.length ? S.services : [emptyService()];
+  const svcRows = svc.map((s, i) => `<tr><td>${i + 1}.</td><td>${dash(s.name)}</td><td>${dash(s.volContract)}</td><td>${dash(s.volPeriod)}</td><td>${dash(s.volFactPeriod)}</td><td>${dash(s.volFact)}</td><td>${dash(s.costPeriod)}</td><td>${dash(s.costFact)}</td></tr>`).join('');
 
   document.getElementById('docWrap').innerHTML = `
   <div class="doc doc-page">
@@ -461,12 +488,7 @@ function renderDoc() {
             <th>Объём по факту за период</th><th>Объём оказанных по факту</th>
             <th>Стоимость за период (без НДС)</th><th>Стоимость оказанных (без НДС)</th>
           </tr>
-          <tr>
-            <td>1.</td><td>${dash(f.S_NAME)}</td>
-            <td>${dash(f.S_VOL_CONTRACT)}</td><td>${dash(f.S_VOL_PERIOD)}</td>
-            <td>${dash(f.S_VOL_FACT_PERIOD)}</td><td>${dash(f.S_VOL_FACT)}</td>
-            <td>${dash(f.S_COST_PERIOD)}</td><td>${dash(f.S_COST_FACT)}</td>
-          </tr>
+          ${svcRows}
         </table>
       </div>
     </div></div>
@@ -519,6 +541,7 @@ async function downloadDocx() {
   fields.INV_DATE_FACT = fields.INV_DATE_FACT || fields.INV_DATE;
   fields.UPD_DATE_PLAN = fields.UPD_DATE_PLAN || fields.UPD_DATE;
   fields.UPD_DATE_FACT = fields.UPD_DATE_FACT || fields.UPD_DATE;
+  fields.services = (S.services.length ? S.services : [emptyService()]);
 
   const resp = await fetch('/api/build-zaklyuchenie', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
