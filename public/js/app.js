@@ -445,7 +445,7 @@ function renderDoc() {
   const updPlan = f.UPD_DATE_PLAN || f.UPD_DATE, updFact = f.UPD_DATE_FACT || f.UPD_DATE;
 
   document.getElementById('docWrap').innerHTML = `
-  <div class="doc">
+  <div class="doc doc-page">
     <div class="doc-top">
       <div class="doc-title">ЗАКЛЮЧЕНИЕ № ${dash(f.ZAK_NUM)}</div>
       <div class="doc-subtitle">экспертной комиссии по проведению экспертизы на соответствие результатов закупки условиям муниципального контракта</div>
@@ -488,7 +488,9 @@ function renderDoc() {
     <div class="doc-item"><span class="doc-num">6.</span><div class="doc-item-body">Дополнительные документы: не предусмотрено.</div></div>
     <div class="doc-item"><span class="doc-num">7.</span><div class="doc-item-body doc-just">В ходе проведения визуального осмотра оказанных услуг, на предмет соответствия указанных услуг количеству, ассортименту, а также иным требованиям, предусмотренными Контрактом, комиссией не выявлены факты ненадлежащего исполнения Контракта исполнителем. Предоставленные документы для принятия и оплаты услуг проверены, соответствуют условиям Контракта. Документы, не соответствующие условиям контракта: не выявлены.</div></div>
     <div class="doc-item"><span class="doc-num">8.</span><div class="doc-item-body doc-just"><b>Заключение комиссии:</b> Услуга поставлена полностью, в соответствии с условиями Контракта и подлежит приёмке. Данное заключение служит основанием для подписания Универсального передаточного документа (СЧФДОП), формата УПД, утверждённого приказом ФНС России*.</div></div>
+  </div>
 
+  <div class="doc doc-page">
     <div class="doc-sign-list">
       ${signRow('Председатель комиссии')}
       ${signRow('Заместитель председателя комиссии')}
