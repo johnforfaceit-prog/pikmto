@@ -639,7 +639,7 @@ function previewSrc(ev) {
   document.getElementById('modalTitle').textContent = S.srcName || 'Документ';
   if (S.srcHtml) document.getElementById('modalBody').innerHTML = S.srcHtml;
   else if (S.srcMime === 'application/pdf') document.getElementById('modalBody').innerHTML = '<p style="text-align:center;color:#888;padding:40px 0">PDF загружен и готов к обработке</p>';
-  else document.getElementById('modalBody').innerHTML = `<img src="data:${S.srcMime};base64,${S.srcB64}" style="width:100%;border-radius:6px;">`;
+  else { document.getElementById('modalBody').innerHTML = `<img src="data:${S.srcMime};base64,${S.srcB64}" class="modal-img">`; document.getElementById('modalBox').classList.add('wide'); }
   document.getElementById('modalOverlay').className = 'modal-overlay open';
 }
 
@@ -647,18 +647,36 @@ function previewInv(ev) {
   ev.stopPropagation();
   if (!S.invFiles.length) { toast('Сначала загрузите листы по счёту'); return; }
   document.getElementById('modalTitle').textContent = 'Листы по счёту (' + S.invFiles.length + ')';
-  document.getElementById('modalBody').innerHTML = S.invFiles.map(f =>
-    (f.mime || '').startsWith('image/')
-      ? `<img src="data:${f.mime};base64,${f.b64}" style="width:100%;border-radius:6px;margin-bottom:10px;">`
-      : `<p style="text-align:center;color:#888;padding:20px 0">${he(f.name)} — ${f.mime === 'application/pdf' ? 'PDF' : 'файл'} готов к обработке</p>`
-  ).join('');
+  document.getElementById('modalBody').innerHTML =
+    '<div class="modal-hint">Нажмите на лист, чтобы открыть в полном размере в новой вкладке</div>' +
+    S.invFiles.map((f, i) =>
+      (f.mime || '').startsWith('image/')
+        ? `<img src="data:${f.mime};base64,${f.b64}" class="modal-img" onclick="openInvFull(${i})">`
+        : `<p style="text-align:center;color:#888;padding:20px 0">${he(f.name)} — ${f.mime === 'application/pdf' ? 'PDF' : 'файл'} готов к обработке</p>`
+    ).join('');
+  document.getElementById('modalBox').classList.add('wide');
   document.getElementById('modalOverlay').className = 'modal-overlay open';
+}
+
+// Открыть лист по счёту в полном размере (blob — без ограничения длины data-URL)
+function openInvFull(i) {
+  const f = S.invFiles[i];
+  if (!f) return;
+  try {
+    const bin = atob(f.b64);
+    const arr = new Uint8Array(bin.length);
+    for (let j = 0; j < bin.length; j++) arr[j] = bin.charCodeAt(j);
+    const url = URL.createObjectURL(new Blob([arr], { type: f.mime || 'image/jpeg' }));
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (_) { toast('Не удалось открыть изображение'); }
 }
 
 function closeModal(ev) { if (ev.target.id === 'modalOverlay') closeModalBtn(); }
 function closeModalBtn() {
   document.getElementById('modalOverlay').className = 'modal-overlay';
   document.getElementById('modalBody').innerHTML = '';
+  document.getElementById('modalBox').classList.remove('wide');
 }
 
 // ════ УТИЛИТЫ ════
