@@ -61,18 +61,18 @@
 
     <div class="drop" id="dropInv"
       onclick="document.getElementById('inInv').click()"
-      ondragover="dz(event,'dropInv',true)" ondragleave="dz(event,'dropInv',false)" ondrop="dropFile(event,'dropInv',loadInv)">
+      ondragover="dz(event,'dropInv',true)" ondragleave="dz(event,'dropInv',false)" ondrop="dropInv(event)">
       <div class="drop-icon" id="invIcon">📸</div>
       <div class="drop-title" id="invTitle">Листы по счёту</div>
-      <div class="drop-sub" id="invSub">Счёт + УПД · JPG, PNG, PDF</div>
+      <div class="drop-sub" id="invSub">Счёт + УПД + скрин ЕИС · можно несколько файлов</div>
       <div class="drop-loaded-name" id="invName" style="display:none"></div>
-      <img id="invThumb" class="invoice-thumb" alt="лист по счёту">
+      <div id="invThumbs" class="inv-thumbs"></div>
     </div>
     <div class="drop-footer" id="invFooter">
       <button class="btn-preview" onclick="previewInv(event)">👁 Просмотр</button>
-      <button class="btn-trash"   onclick="clearInv(event)" title="Удалить">🗑</button>
+      <button class="btn-trash"   onclick="clearInv(event)" title="Удалить все">🗑</button>
     </div>
-    <input type="file" id="inInv" accept="image/*,.pdf,.docx" style="display:none" onchange="loadInv(this.files[0])">
+    <input type="file" id="inInv" accept="image/*,.pdf,.docx" multiple style="display:none" onchange="onInvInput(this)">
   </div>
 
   <!-- Кнопка формирования -->
