@@ -14,12 +14,14 @@ const ZAK_TOKENS = [
   'INV_NUM','INV_DATE','INV_DATE_PLAN','INV_DATE_FACT','UPD_NUM','UPD_DATE','UPD_DATE_PLAN','UPD_DATE_FACT',
   'LBL_EXECUTOR','LBL_ADDRESS','LBL_INV','LBL_UPD'
 ];
-// Подписи строк: если значение не передано — подставляем стандартный текст
+// Значения по умолчанию: подписи строк + дата заключения (всегда пустая — заполняется от руки)
 const LABEL_DEFAULTS = {
   LBL_EXECUTOR: 'Наименование исполнителя',
   LBL_ADDRESS:  'Место нахождения, адрес',
   LBL_INV:      'Счёт на оплату',
-  LBL_UPD:      'Документ о приёмке (функция СЧФДОП)*'
+  LBL_UPD:      'Документ о приёмке (функция СЧФДОП)*',
+  ZAK_DAY:      '___',
+  ZAK_MONTH:    '__________'
 };
 function escapeXml(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
