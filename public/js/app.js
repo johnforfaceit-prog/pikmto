@@ -119,16 +119,21 @@ async function loadSrc(file) {
 }
 
 // ════ ЗАГРУЗКА ЛИСТОВ ПО СЧЁТУ (несколько файлов) ════
-function onInvInput(input) { addInvFiles(input.files); input.value = ''; }
+function onInvInput(input) {
+  const files = Array.from(input.files || []); // копируем ДО очистки (input.files — живой список)
+  input.value = '';
+  addInvFiles(files);
+}
 function dropInv(e) {
   e.preventDefault();
   document.getElementById('dropInv').classList.remove('dragging');
-  addInvFiles(e.dataTransfer.files);
+  addInvFiles(Array.from(e.dataTransfer.files || []));
 }
 
 async function addInvFiles(fileList) {
-  if (!fileList || !fileList.length) return;
-  for (const file of fileList) {
+  const files = Array.from(fileList || []);
+  if (!files.length) return;
+  for (const file of files) {
     try {
       const b64 = await toBase64(file);
       S.invFiles.push({ b64, mime: file.type || guessMime(file.name), name: file.name });
