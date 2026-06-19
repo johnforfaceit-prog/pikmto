@@ -3,6 +3,19 @@ const router  = express.Router();
 const fetch   = require('node-fetch');
 const mammoth = require('mammoth');
 const JSZip   = require('jszip');
+const fs      = require('fs');
+const path    = require('path');
+
+// ── Шаблон итогового заключения (один на все документы) ──
+const TEMPLATE_PATH = path.join(__dirname, '..', 'templates', 'zaklyuchenie_template.docx');
+const ZAK_TOKENS = [
+  'ZAK_NUM','ZAK_DAY','ZAK_MONTH','CONTRACT_NUM','CONTRACT_DATE','SUBJECT','EXECUTOR','ADDRESS',
+  'S_NAME','S_VOL_CONTRACT','S_VOL_PERIOD','S_VOL_FACT_PERIOD','S_VOL_FACT','S_COST_PERIOD','S_COST_FACT',
+  'INV_NUM','INV_DATE','INV_DATE_PLAN','INV_DATE_FACT','UPD_NUM','UPD_DATE','UPD_DATE_PLAN','UPD_DATE_FACT'
+];
+function escapeXml(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
 // ── Проксируем запросы к Claude ──
 // Решает CORS — браузер обращается к нашему серверу, сервер — к Anthropic
@@ -77,6 +90,33 @@ router.post('/patch-docx', async (req, res) => {
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.setHeader('Content-Disposition', 'attachment; filename="zaklyuchenie.docx"');
     res.send(outBuffer);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── Сборка итогового заключения из встроенного шаблона ──
+router.post('/build-zaklyuchenie', async (req, res) => {
+  try {
+    const fields = req.body.fields || {};
+    if (!fs.existsSync(TEMPLATE_PATH)) return res.status(500).json({ error: 'Шаблон заключения не найден на сервере' });
+
+    const zip = await JSZip.loadAsync(fs.readFileSync(TEMPLATE_PATH));
+    let xml = await zip.file('word/document.xml').async('string');
+
+    for (const t of ZAK_TOKENS) {
+      xml = xml.split('{{' + t + '}}').join(escapeXml(fields[t]));
+    }
+
+    zip.file('word/document.xml', xml);
+    const out = await zip.generateAsync({
+      type: 'nodebuffer',
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', 'attachment; filename="zaklyuchenie.docx"');
+    res.send(out);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }

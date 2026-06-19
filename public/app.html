@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ПИК — Заключение по счёту</title>
+<title>ПИК — Заключение экспертной комиссии</title>
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
       <div class="brand-left">
         <div class="brand-icon">П</div>
         <div>
-          <div class="brand-name">ПИК — Заключение по счёту</div>
+          <div class="brand-name">ПИК — Заключение комиссии</div>
           <div class="brand-sub">Автоматизированная система документооборота</div>
         </div>
       </div>
@@ -34,82 +34,60 @@
     <div class="api-saved" id="apiSaved">✓ Ключ сохранён</div>
   </div>
 
-  <!-- Steps -->
-  <div class="steps-wrap">
-    <div class="step">
-      <div class="step-dot active" id="dot1">1</div>
-      <div class="step-info">
-        <div class="step-title">Прошлое заключение</div>
-        <div class="step-sub">.docx из папки подрядчика</div>
-      </div>
+  <!-- Режим работы -->
+  <div class="mode-wrap">
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tabExisting" onclick="setMode('existing')">Действующий контракт</button>
+      <button class="mode-tab" id="tabNew" onclick="setMode('new')">Новый контракт</button>
     </div>
-    <div class="step-connector"></div>
-    <div class="step">
-      <div class="step-dot" id="dot2">2</div>
-      <div class="step-info">
-        <div class="step-title">Фото или скан счёта</div>
-        <div class="step-sub">JPG, PNG, PDF</div>
-      </div>
-    </div>
-    <div class="step-connector"></div>
-    <div class="step">
-      <div class="step-dot" id="dot3">3</div>
-      <div class="step-info">
-        <div class="step-title">Программа заполняет — вы проверяете</div>
-        <div class="step-sub">Скачай → печатай → подписи</div>
-      </div>
-    </div>
+    <div class="mode-hint" id="modeHint"></div>
   </div>
 
   <!-- Drop zones -->
   <div class="drops">
-    <div class="drop" id="dropDocx"
-      onclick="document.getElementById('inDocx').click()"
-      ondragover="dz(event,'dropDocx',true)" ondragleave="dz(event,'dropDocx',false)" ondrop="dropFile(event,'dropDocx')">
-      <div class="drop-icon" id="docxIcon">📄</div>
-      <div class="drop-title" id="docxTitle">Заключение прошлого месяца</div>
-      <div class="drop-sub" id="docxSub">DOCX, фото или скан · перетащите или нажмите</div>
-      <div class="drop-loaded-name" id="docxName" style="display:none"></div>
+    <div class="drop" id="dropSrc"
+      onclick="document.getElementById('inSrc').click()"
+      ondragover="dz(event,'dropSrc',true)" ondragleave="dz(event,'dropSrc',false)" ondrop="dropFile(event,'dropSrc',loadSrc)">
+      <div class="drop-icon" id="srcIcon">📄</div>
+      <div class="drop-title" id="srcTitle">Заключение прошлого месяца</div>
+      <div class="drop-sub" id="srcSub">.docx — нажмите или перетащите</div>
+      <div class="drop-loaded-name" id="srcName" style="display:none"></div>
     </div>
-    <div class="drop-footer" id="docxFooter">
-      <button class="btn-preview" onclick="previewDocx(event)">👁 Просмотр</button>
-      <button class="btn-trash"   onclick="clearDocx(event)" title="Удалить">🗑</button>
+    <div class="drop-footer" id="srcFooter">
+      <button class="btn-preview" onclick="previewSrc(event)">👁 Просмотр</button>
+      <button class="btn-trash"   onclick="clearSrc(event)" title="Удалить">🗑</button>
     </div>
-    <input type="file" id="inDocx" accept=".docx,image/*,.pdf" style="display:none" onchange="routeFile(this.files[0])">
+    <input type="file" id="inSrc" accept=".docx,image/*,.pdf" style="display:none" onchange="loadSrc(this.files[0])">
 
-    <div class="drop" id="dropImg"
-      onclick="document.getElementById('inImg').click()"
-      ondragover="dz(event,'dropImg',true)" ondragleave="dz(event,'dropImg',false)" ondrop="dropFile(event,'dropImg')">
-      <div class="drop-icon" id="imgIcon">📸</div>
-      <div class="drop-title" id="imgTitle">Фото или скан счёта</div>
-      <div class="drop-sub" id="imgSub">JPG, PNG, PDF или DOCX</div>
-      <div class="drop-loaded-name" id="imgName" style="display:none"></div>
-      <img id="invoiceThumb" class="invoice-thumb" alt="счёт">
+    <div class="drop" id="dropInv"
+      onclick="document.getElementById('inInv').click()"
+      ondragover="dz(event,'dropInv',true)" ondragleave="dz(event,'dropInv',false)" ondrop="dropFile(event,'dropInv',loadInv)">
+      <div class="drop-icon" id="invIcon">📸</div>
+      <div class="drop-title" id="invTitle">Листы по счёту</div>
+      <div class="drop-sub" id="invSub">Счёт + УПД · JPG, PNG, PDF</div>
+      <div class="drop-loaded-name" id="invName" style="display:none"></div>
+      <img id="invThumb" class="invoice-thumb" alt="лист по счёту">
     </div>
-    <div class="drop-footer" id="imgFooter">
-      <button class="btn-preview" onclick="previewImg(event)">👁 Просмотр</button>
-      <button class="btn-trash"   onclick="clearImg(event)" title="Удалить">🗑</button>
+    <div class="drop-footer" id="invFooter">
+      <button class="btn-preview" onclick="previewInv(event)">👁 Просмотр</button>
+      <button class="btn-trash"   onclick="clearInv(event)" title="Удалить">🗑</button>
     </div>
-    <input type="file" id="inImg" accept="image/*,.pdf,.docx" style="display:none" onchange="routeFile(this.files[0])">
+    <input type="file" id="inInv" accept="image/*,.pdf,.docx" style="display:none" onchange="loadInv(this.files[0])">
   </div>
 
-  <!-- Кнопка распознавания -->
+  <!-- Кнопка формирования -->
   <div class="ai-btn-wrap">
-    <button class="btn-ai" id="btnAI" onclick="runAI()" disabled>
+    <button class="btn-ai" id="btnRun" onclick="runExtract()" disabled>
       <div class="spinner"></div>
-      <span id="btnAILabel">✦ Распознать счёт и заполнить</span>
+      <span id="btnRunLabel">✦ Сформировать заключение</span>
     </button>
   </div>
-  <div class="ai-status" id="aiStatus"></div>
+  <div class="ai-status" id="runStatus"></div>
 
   <div class="divider"></div>
 
   <!-- Поля -->
-  <div class="fields" id="fieldsArea">
-    <div style="text-align:center;padding:16px 0;color:#888;font-size:12px;line-height:1.6;">
-      Загрузите файлы и нажмите<br>«Распознать счёт и заполнить»
-    </div>
-  </div>
+  <div class="fields" id="fieldsArea"></div>
 
   <div class="sidebar-foot">
     <button class="btn-main" id="btnDown" onclick="downloadDocx()" disabled>↓ Скачать .docx</button>
@@ -120,25 +98,16 @@
 <!-- ══ MAIN ══ -->
 <main class="main">
   <div class="preview-bar">
-    <span class="preview-label">Предпросмотр документа</span>
+    <span class="preview-label">Предпросмотр заключения</span>
     <button class="btn-print" onclick="window.print()">Печать</button>
   </div>
-  <div id="docWrap">
-    <div class="empty">
-      <div class="empty-emblem">⚜</div>
-      <div class="empty-title">Система автоматизации документооборота</div>
-      <div class="empty-sub">
-        Загрузите прошлое заключение и счёт для автоматического заполнения.<br>
-        Нажмите «Распознать счёт и заполнить» для формирования документа.
-      </div>
-    </div>
-  </div>
+  <div id="docWrap"></div>
 
   <!-- Окно правок к документу -->
   <div class="fixbox" id="fixbox">
     <div class="fixbox-head">Правки к документу</div>
-    <div class="fixbox-hint">Опишите, что нужно изменить в самом документе: реквизиты подрядчика, номера и даты, суммы, описание работ, статью бюджета, текст заключения или подписи. Правки применяются только к содержимому документа — оформление сайта, вёрстка и интерфейс этим окном не изменяются.</div>
-    <textarea id="fixInput" placeholder="Например: исправь ИНН подрядчика на 7701234567, сумму без НДС поставь 150000, в подписи директора укажи Иванов И. И."></textarea>
+    <div class="fixbox-hint">Опишите, что нужно изменить в самом документе: реквизиты контракта и исполнителя, номера и даты, объёмы и стоимость услуг, данные счёта и УПД. Правки применяются только к содержимому документа — оформление сайта, вёрстка и интерфейс этим окном не изменяются.</div>
+    <textarea id="fixInput" placeholder="Например: исправь номер счёта на 1024, стоимость за период поставь 68820, дату УПД — 02.10.2026"></textarea>
     <div class="fixbox-row">
       <button class="btn-fix" id="btnFix" onclick="applyFix()">
         <span id="btnFixLabel">Применить правки</span>
