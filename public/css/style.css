@@ -219,6 +219,9 @@ table.zt th { font-weight: bold; background: #f4f4f4; }
 .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 999; align-items: center; justify-content: center; }
 .modal-overlay.open { display: flex; }
 .modal-box { background: var(--white); border-radius: 12px; width: 90%; max-width: 720px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
+.modal-box.wide { width: 96vw; max-width: 1400px; max-height: 94vh; }
+.modal-hint { font-size: 12px; color: var(--soft); text-align: center; padding-bottom: 10px; font-family: var(--sans); }
+.modal-img { display: block; width: 100%; border-radius: 6px; margin-bottom: 12px; cursor: zoom-in; border: 1px solid var(--border); }
 .modal-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--border); }
 .modal-head-title { font-size: 14px; font-weight: 600; }
 .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--soft); line-height: 1; padding: 2px 6px; border-radius: 4px; }
