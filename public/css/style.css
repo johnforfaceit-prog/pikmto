@@ -136,7 +136,7 @@ textarea { min-height: 54px; resize: vertical; line-height: 1.5; }
 .doc-org { font-size: 12pt; text-transform: uppercase; letter-spacing: .04em; color: #555; margin-bottom: 6px; }
 .doc-title { font-size: 12pt; font-weight: bold; text-transform: uppercase; letter-spacing: .03em; }
 .doc-subtitle { font-size: 12pt; color: #333; margin-top: 4px; }
-.doc-meta { display: flex; justify-content: space-between; font-size: 12pt; color: #555; padding-bottom: 12px; border-bottom: 2px solid #000; margin-bottom: 22px; }
+.doc-meta { display: flex; justify-content: space-between; font-size: 12pt; color: #555; margin-bottom: 18px; }
 .doc-sec { margin-bottom: 18px; }
 .doc-sec-h { font-size: 12pt; font-weight: bold; text-transform: uppercase; letter-spacing: .05em; color: #555; margin-bottom: 7px; }
 table.dt { width: 100%; border-collapse: collapse; font-size: 12pt; }
@@ -242,7 +242,7 @@ table.zt th { font-weight: bold; background: #f4f4f4; }
 /* ── Print (альбомная ориентация, каждый лист отдельно) ── */
 @page { size: A4 landscape; margin: 12mm; }
 @media print {
-  .sidebar, .fixbox { display: none !important; }
+  .sidebar, .preview-bar, .fixbox { display: none !important; }
   .app { display: block; }
   .main { padding: 0; }
   .doc { box-shadow: none; border: none; max-width: 100%; }
