@@ -487,6 +487,26 @@ function executorFull() {
   return ex;
 }
 
+// ════ РЕДАКТИРОВАНИЕ ПРЯМО В ПРЕДПРОСМОТРЕ ════
+// Редактируемое значение (inline) и ячейка таблицы, привязанные к состоянию
+function edv(path, val) {
+  return `<span class="edv" contenteditable="true" data-p="${path}" oninput="edPreview(this)">${he(val == null ? '' : val)}</span>`;
+}
+function edtd(path, val) {
+  return `<td class="edv" contenteditable="true" data-p="${path}" oninput="edPreview(this)">${he(val == null ? '' : val)}</td>`;
+}
+function edPreview(el) {
+  setByPath(el.getAttribute('data-p'), el.textContent);
+  buildForm(); // синхронизируем форму; предпросмотр не перерисовываем, чтобы не терять курсор
+}
+function setByPath(path, val) {
+  val = String(val == null ? '' : val).replace(/\u00a0/g, ' ');
+  const p = path.split('.');
+  if (p[0] === 'f') S.f[p[1]] = val;
+  else if (p[0] === 'lbl') S.lbl[p[1]] = val;
+  else if (p[0] === 'svc') { const i = +p[1]; if (S.services[i]) S.services[i][p[2]] = val; }
+}
+
 // ════ РЕНДЕР ДОКУМЕНТА ════
 function renderDoc() {
   const f = S.f;
@@ -495,19 +515,19 @@ function renderDoc() {
   const invPlan = f.INV_DATE_PLAN || f.INV_DATE, invFact = f.INV_DATE_FACT || f.INV_DATE;
   const updPlan = f.UPD_DATE_PLAN || f.UPD_DATE, updFact = f.UPD_DATE_FACT || f.UPD_DATE;
   const svc = S.services.length ? S.services : [emptyService()];
-  const svcRows = svc.map((s, i) => `<tr><td>${i + 1}.</td><td>${dash(s.name)}</td><td>${dash(s.volContract)}</td><td>${dash(s.volPeriod)}</td><td>${dash(s.volFactPeriod)}</td><td>${dash(s.volFact)}</td><td>${dash(s.costPeriod)}</td><td>${dash(s.costFact)}</td></tr>`).join('');
+  const svcRows = svc.map((s, i) => `<tr><td>${i + 1}.</td>${edtd('svc.' + i + '.name', s.name)}${edtd('svc.' + i + '.volContract', s.volContract)}${edtd('svc.' + i + '.volPeriod', s.volPeriod)}${edtd('svc.' + i + '.volFactPeriod', s.volFactPeriod)}${edtd('svc.' + i + '.volFact', s.volFact)}${edtd('svc.' + i + '.costPeriod', s.costPeriod)}${edtd('svc.' + i + '.costFact', s.costFact)}</tr>`).join('');
 
   document.getElementById('docWrap').innerHTML = `
   <div class="doc doc-page">
     <div class="doc-top">
-      <div class="doc-title">ЗАКЛЮЧЕНИЕ № ${dash(f.ZAK_NUM)}</div>
+      <div class="doc-title">ЗАКЛЮЧЕНИЕ № ${edv('f.ZAK_NUM', f.ZAK_NUM)}</div>
       <div class="doc-subtitle">экспертной комиссии по проведению экспертизы на соответствие результатов закупки условиям муниципального контракта</div>
     </div>
     <div class="doc-meta"><span>г. Красногорск</span><span>${zakDateStr}</span></div>
 
-    <div class="doc-item"><span class="doc-num">1.</span><div class="doc-item-body">Контракт № ${dash(f.CONTRACT_NUM)} от ${dash(f.CONTRACT_DATE)}. ${dash(f.SUBJECT)};</div></div>
-    <div class="doc-item"><span class="doc-num">2.</span><div class="doc-item-body">${he(S.lbl.LBL_EXECUTOR)}: ${dash(executorFull())}</div></div>
-    <div class="doc-item"><span class="doc-num">3.</span><div class="doc-item-body">${he(S.lbl.LBL_ADDRESS)}: ${dash(f.ADDRESS)}</div></div>
+    <div class="doc-item"><span class="doc-num">1.</span><div class="doc-item-body">Контракт № ${edv('f.CONTRACT_NUM', f.CONTRACT_NUM)} от ${edv('f.CONTRACT_DATE', f.CONTRACT_DATE)}. ${edv('f.SUBJECT', f.SUBJECT)};</div></div>
+    <div class="doc-item"><span class="doc-num">2.</span><div class="doc-item-body">${edv('lbl.LBL_EXECUTOR', S.lbl.LBL_EXECUTOR)}: ${edv('f.EXECUTOR', f.EXECUTOR)}, ОГРН ${edv('f.OGRN', f.OGRN)}</div></div>
+    <div class="doc-item"><span class="doc-num">3.</span><div class="doc-item-body">${edv('lbl.LBL_ADDRESS', S.lbl.LBL_ADDRESS)}: ${edv('f.ADDRESS', f.ADDRESS)}</div></div>
 
     <div class="doc-item"><span class="doc-num">4.</span><div class="doc-item-body">
       <p class="doc-p">Информация об исполнении Контракта, в том числе о промежуточных результатах исполнения Контракта оказания услуг:</p>
@@ -528,8 +548,8 @@ function renderDoc() {
       <p class="doc-p">Отчётная документация исполнителя:</p>
       <table class="zt">
         <tr><th>№</th><th>Наименование документа</th><th>№ документа</th><th>Дата документа</th><th>Предоставление (план)</th><th>Предоставление (факт)</th></tr>
-        <tr><td>1.</td><td>${dash(S.lbl.LBL_INV)}</td><td>${dash(f.INV_NUM)}</td><td>${dash(f.INV_DATE)}</td><td>${dash(invPlan)}</td><td>${dash(invFact)}</td></tr>
-        <tr><td>2.</td><td>${dash(S.lbl.LBL_UPD)}</td><td>${dash(f.UPD_NUM)}</td><td>${dash(f.UPD_DATE)}</td><td>${dash(updPlan)}</td><td>${dash(updFact)}</td></tr>
+        <tr><td>1.</td>${edtd('lbl.LBL_INV', S.lbl.LBL_INV)}${edtd('f.INV_NUM', f.INV_NUM)}${edtd('f.INV_DATE', f.INV_DATE)}${edtd('f.INV_DATE_PLAN', invPlan)}${edtd('f.INV_DATE_FACT', invFact)}</tr>
+        <tr><td>2.</td>${edtd('lbl.LBL_UPD', S.lbl.LBL_UPD)}${edtd('f.UPD_NUM', f.UPD_NUM)}${edtd('f.UPD_DATE', f.UPD_DATE)}${edtd('f.UPD_DATE_PLAN', updPlan)}${edtd('f.UPD_DATE_FACT', updFact)}</tr>
       </table>
     </div></div>
 
