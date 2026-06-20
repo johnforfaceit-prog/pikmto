@@ -215,6 +215,13 @@ table.zt-svc th, table.zt-svc td { font-size: 11pt; }
 .sign-cap { font-size: 9pt; color: #555; }
 .ph { color: #b00; }
 
+/* ── Редактирование прямо в предпросмотре ── */
+.edv { outline: none; border-radius: 2px; cursor: text; min-width: 10px; transition: background .1s; }
+.edv:hover { background: #fff7d6; }
+.edv:focus { background: #fffbe6; box-shadow: 0 0 0 2px rgba(200,16,46,.22); }
+.edv:empty::before { content: '—'; color: #bbb; }
+td.edv { cursor: text; }
+
 /* ── Fix box ── */
 .fixbox { width: 100%; max-width: 1123px; margin-top: 22px; background: var(--white); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; display: none; }
 .fixbox.visible { display: block; }
