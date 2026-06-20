@@ -5,7 +5,7 @@ const SUBJECT_DEFAULT = 'Оказание услуг по ремонту и те
 // Поля = токены шаблона заключения (без услуг — они в массиве S.services)
 function emptyFields() {
   return {
-    ZAK_NUM:'', CONTRACT_NUM:'', CONTRACT_DATE:'', SUBJECT:'', EXECUTOR:'', ADDRESS:'',
+    ZAK_NUM:'', CONTRACT_NUM:'', CONTRACT_DATE:'', SUBJECT:'', EXECUTOR:'', OGRN:'', ADDRESS:'',
     INV_NUM:'', INV_DATE:'', INV_DATE_PLAN:'', INV_DATE_FACT:'',
     UPD_NUM:'', UPD_DATE:'', UPD_DATE_PLAN:'', UPD_DATE_FACT:''
   };
@@ -253,7 +253,12 @@ function parsePrevZak(text) {
     S.f.CONTRACT_DATE = m[2];
   }
   if ((m = text.match(/от\s*\d{2}\.\d{2}\.\d{4}\.?\s*([^\n;]+);/i)))  S.f.SUBJECT  = clean(m[1]) || S.f.SUBJECT;
-  if ((m = text.match(/Наименование исполнителя:\s*([^\n]+)/i)))      S.f.EXECUTOR = clean(m[1]) || S.f.EXECUTOR;
+  if ((m = text.match(/Наименование исполнителя:\s*([^\n]+)/i))) {
+    let ex = clean(m[1]);
+    const og = ex.match(/,?\s*ОГРН\s*(\d{13,15})/i);   // отделяем ОГРН, если он уже в строке
+    if (og) { S.f.OGRN = og[1]; ex = ex.replace(/,?\s*ОГРН\s*\d{13,15}.*$/i, '').trim(); }
+    if (ex) S.f.EXECUTOR = ex;
+  }
   if ((m = text.match(/Место нахождения[^:]*:\s*([^\n]+)/i)))         S.f.ADDRESS  = clean(m[1]) || S.f.ADDRESS;
 }
 
@@ -266,13 +271,14 @@ async function extractContract() {
   "CONTRACT_NUM": "номер контракта",
   "CONTRACT_DATE": "дата контракта в формате ДД.ММ.ГГГГ",
   "EXECUTOR": "полное наименование исполнителя",
+  "OGRN": "ОГРН ИСПОЛНИТЕЛЯ (поставщика услуг), НЕ заказчика. В контракте обычно указаны два ОГРН — заказчика (МКУ «ЦОД», ИНН начинается на 5024) и исполнителя; нужен ОГРН исполнителя, у него тот же ИНН, что указан рядом с наименованием исполнителя. 13–15 цифр",
   "ADDRESS": "место нахождения, адрес исполнителя",
   "SUBJECT": "предмет контракта одной строкой, например 'Оказание услуг по ремонту ... в 2026 году'"
 }
 Если поле не найдено — пустая строка.`;
 
   const parsed = await callClaude(srcContent(prompt), 1500);
-  ['ZAK_NUM','CONTRACT_NUM','CONTRACT_DATE','EXECUTOR','ADDRESS','SUBJECT'].forEach(k => {
+  ['ZAK_NUM','CONTRACT_NUM','CONTRACT_DATE','EXECUTOR','OGRN','ADDRESS','SUBJECT'].forEach(k => {
     if (parsed[k]) S.f[k] = String(parsed[k]).trim();
   });
 }
@@ -423,6 +429,7 @@ function buildForm(markFilled) {
       </div>
       ${fld('SUBJECT','Предмет контракта','textarea')}
       ${fldL('LBL_EXECUTOR','EXECUTOR')}
+      ${fld('OGRN','ОГРН исполнителя (добавится после наименования)')}
       ${fldL('LBL_ADDRESS','ADDRESS')}
     </div>
     <div class="fgroup">
@@ -464,6 +471,14 @@ function e(s) { return (s || '').replace(/"/g, '&quot;').replace(/</g, '&lt;').r
 function u(key, el) { S.f[key] = el.value; el.classList.remove('ai-filled'); renderDoc(); }
 function uLbl(key, el) { S.lbl[key] = el.value; renderDoc(); }
 
+// Наименование исполнителя + «, ОГРН <номер>» в конце (без дублирования)
+function executorFull() {
+  const ex = (S.f.EXECUTOR || '').trim();
+  const ogrn = (S.f.OGRN || '').trim();
+  if (ogrn && !/ОГРН/i.test(ex)) return (ex ? ex + ', ' : '') + 'ОГРН ' + ogrn;
+  return ex;
+}
+
 // ════ РЕНДЕР ДОКУМЕНТА ════
 function renderDoc() {
   const f = S.f;
@@ -483,7 +498,7 @@ function renderDoc() {
     <div class="doc-meta"><span>г. Красногорск</span><span>${zakDateStr}</span></div>
 
     <div class="doc-item"><span class="doc-num">1.</span><div class="doc-item-body">Контракт № ${dash(f.CONTRACT_NUM)} от ${dash(f.CONTRACT_DATE)}. ${dash(f.SUBJECT)};</div></div>
-    <div class="doc-item"><span class="doc-num">2.</span><div class="doc-item-body">${he(S.lbl.LBL_EXECUTOR)}: ${dash(f.EXECUTOR)}</div></div>
+    <div class="doc-item"><span class="doc-num">2.</span><div class="doc-item-body">${he(S.lbl.LBL_EXECUTOR)}: ${dash(executorFull())}</div></div>
     <div class="doc-item"><span class="doc-num">3.</span><div class="doc-item-body">${he(S.lbl.LBL_ADDRESS)}: ${dash(f.ADDRESS)}</div></div>
 
     <div class="doc-item"><span class="doc-num">4.</span><div class="doc-item-body">
@@ -543,7 +558,8 @@ function signRow(role) {
 // ════ СКАЧИВАНИЕ ════
 async function downloadDocx() {
   const fields = Object.assign({}, S.f, S.lbl);
-  fields.ZAK_DAY   = '___';        // дата заключения всегда пустая — ставится от руки
+  fields.EXECUTOR  = executorFull();   // наименование исполнителя + ОГРН
+  fields.ZAK_DAY   = '___';            // дата заключения всегда пустая — ставится от руки
   fields.ZAK_MONTH = '__________';
   fields.INV_DATE_PLAN = fields.INV_DATE_PLAN || fields.INV_DATE;
   fields.INV_DATE_FACT = fields.INV_DATE_FACT || fields.INV_DATE;
