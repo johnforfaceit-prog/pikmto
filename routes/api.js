@@ -114,6 +114,11 @@ router.post('/build-zaklyuchenie', async (req, res) => {
     const zip = await JSZip.loadAsync(fs.readFileSync(TEMPLATE_PATH));
     let xml = await zip.file('word/document.xml').async('string');
 
+    // Пункты 1–4 и 6–8: междустрочный интервал не меньше 1.5 (line=360), чтобы текст не слипался.
+    // Большинство пунктов уже 1.5; пункт 6 «Дополнительные документы» был одинарным — поднимаем.
+    xml = xml.split('<w:spacing w:before="240" w:after="120" w:line="240" w:lineRule="auto"/>')
+             .join('<w:spacing w:before="240" w:after="120" w:line="360" w:lineRule="auto"/>');
+
     // Таблица услуг «Информация об исполнении Контракта» — всегда шрифт 11pt
     // (sz в полупунктах: 11pt = 22). Помогает уложить заключение в два листа.
     const svcTblRe = /<w:tbl>(?:(?!<\/w:tbl>)[\s\S])*?\{\{S_NAME\}\}[\s\S]*?<\/w:tbl>/;
