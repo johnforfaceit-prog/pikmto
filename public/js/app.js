@@ -227,6 +227,9 @@ async function runExtract() {
     }
     if (S.invFiles.length) await extractInvoice();
 
+    // Номер заключения = номер контракта + «/01» (для нового контракта), если не задан
+    if (!S.f.ZAK_NUM && S.f.CONTRACT_NUM) S.f.ZAK_NUM = S.f.CONTRACT_NUM + '/01';
+
     buildForm(true);
     renderDoc();
     document.getElementById('btnDown').disabled = false;
@@ -294,6 +297,8 @@ async function extractInvoice() {
       "costFact": "стоимость оказанных без НДС (столбец «Сумма» по этой строке), числом"
     }
   ],
+  "CONTRACT_NUM": "номер контракта — из строки «Основание: Муниципальный контракт № ... от ...» счёта или из «Номер ЕИС / Внутренний номер контракта» на экране ЕИС",
+  "CONTRACT_DATE": "дата заключения контракта в формате ДД.ММ.ГГГГ — из «Муниципальный контракт № ... от ДД.ММ.ГГГГ» счёта или из «Дата заключения: ДД.ММ.ГГГГ» на экране ЕИС",
   "INV_NUM": "номер счёта на оплату — из строки «Счёт на оплату» таблицы системы (ЕИС/ПИК)",
   "INV_DATE": "дата счёта на оплату — с самого листа «Счёт на оплату № ... от ...», формат ДД.ММ.ГГГГ",
   "INV_DATE_PLAN": "дата предоставления (план) для строки «Счёт на оплату» из таблицы системы (ЕИС/ПИК), формат ДД.ММ.ГГГГ",
@@ -313,6 +318,9 @@ async function extractInvoice() {
   const parsed = await callClaude(invContent(prompt), 3000);
   ['INV_NUM','INV_DATE','INV_DATE_PLAN','INV_DATE_FACT','UPD_NUM','UPD_DATE','UPD_DATE_PLAN','UPD_DATE_FACT']
     .forEach(k => { if (parsed[k] != null && parsed[k] !== '') S.f[k] = String(parsed[k]).trim(); });
+
+  // № и дата контракта из листов — заполняем, если ещё не заданы (контракт мог не загружаться)
+  ['CONTRACT_NUM','CONTRACT_DATE'].forEach(k => { if (!S.f[k] && parsed[k]) S.f[k] = String(parsed[k]).trim(); });
 
   // Услуги: по объекту на каждую позицию счёта
   if (Array.isArray(parsed.services) && parsed.services.length) {
