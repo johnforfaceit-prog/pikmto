@@ -481,7 +481,7 @@ function renderDoc() {
     <div class="doc-item"><span class="doc-num">4.</span><div class="doc-item-body">
       <p class="doc-p">Информация об исполнении Контракта, в том числе о промежуточных результатах исполнения Контракта оказания услуг:</p>
       <div class="doc-tscroll">
-        <table class="zt">
+        <table class="zt zt-svc">
           <tr>
             <th>№</th><th>Наименование оказываемых услуг</th>
             <th>Объём согласно Контракту</th><th>Объём за указанный период</th>
