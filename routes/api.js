@@ -114,6 +114,15 @@ router.post('/build-zaklyuchenie', async (req, res) => {
     const zip = await JSZip.loadAsync(fs.readFileSync(TEMPLATE_PATH));
     let xml = await zip.file('word/document.xml').async('string');
 
+    // Таблица услуг «Информация об исполнении Контракта» — всегда шрифт 11pt
+    // (sz в полупунктах: 11pt = 22). Помогает уложить заключение в два листа.
+    const svcTblRe = /<w:tbl>(?:(?!<\/w:tbl>)[\s\S])*?\{\{S_NAME\}\}[\s\S]*?<\/w:tbl>/;
+    const svcTbl = xml.match(svcTblRe);
+    if (svcTbl) {
+      const shrunk = svcTbl[0].replace(/(<w:sz(?:Cs)? w:val=")\d+("\s*\/>)/g, (m, a, b) => a + '22' + b);
+      xml = xml.replace(svcTblRe, shrunk);
+    }
+
     // Таблица услуг: размножаем строку по числу услуг
     const services = Array.isArray(fields.services) ? fields.services : [];
     const rowRe = /<w:tr\b[^>]*>(?:(?!<\/w:tr>)[\s\S])*?\{\{S_NAME\}\}(?:(?!<\/w:tr>)[\s\S])*?<\/w:tr>/;
