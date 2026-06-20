@@ -40,6 +40,7 @@ body { font-family: var(--sans); background: var(--bg); color: var(--dark); min-
 .brand-icon { width: 30px; height: 30px; background: var(--red); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px; font-weight: 700; flex-shrink: 0; }
 .brand-name { font-size: 14px; font-weight: 600; }
 .brand-sub { font-size: 11px; color: var(--soft); }
+.brand-org { font-size: 11px; font-weight: 700; color: var(--red); margin-top: 3px; }
 .btn-logout { font-size: 11px; color: var(--soft); background: none; border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; transition: all .12s; }
 .btn-logout:hover { color: var(--red); border-color: var(--red); }
 
